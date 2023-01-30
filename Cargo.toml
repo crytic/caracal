@@ -1,0 +1,22 @@
+[package]
+name = "starknet-static-analysis"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { version = "1.0.66" }
+clap = { version = "4.1.4"}
+
+cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
