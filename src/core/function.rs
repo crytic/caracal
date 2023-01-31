@@ -5,9 +5,32 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{Function as SierraFunction, Param, Statement as SierraStatement};
 
 #[derive(Debug)]
+pub enum Type {
+    /// External function defined by the user
+    External,
+    /// View function defined by the user
+    View,
+    /// Private function defined by the user
+    Private,
+    /// Constructor function defined by the user
+    Constructor,
+    /// Event function
+    Event,
+    /// Function made by the compiler for storage variables
+    /// typically address, read, write
+    Storage,
+    /// Wrapper around an external function made by the compiler
+    Wrapper,
+    /// Function of the core library
+    Core,
+}
+
+#[derive(Debug)]
 pub struct Function<'a> {
     /// Underlying Function data
     data: &'a SierraFunction,
+    /// Type of function
+    ty: Option<Type>,
     /// The sequence of statements
     statements: Vec<SierraStatement>,
     /// A regular CFG from the statements
@@ -20,6 +43,7 @@ impl<'a> Function<'a> {
     pub fn new(data: &'a SierraFunction, statements: Vec<SierraStatement>) -> Self {
         Function {
             data,
+            ty: None,
             statements,
             cfg_regular: CfgRegular::new(),
             cfg_optimized: CfgOptimized::new(),
@@ -30,20 +54,17 @@ impl<'a> Function<'a> {
         self.data.id.to_string()
     }
 
+    pub fn ty(&self) -> &Type {
+        // At this point is always initialized
+        self.ty.as_ref().unwrap()
+    }
+
     pub fn returns(&self) -> impl Iterator<Item = &ConcreteTypeId> {
         self.data.signature.ret_types.iter()
     }
 
     pub fn params(&self) -> impl Iterator<Item = &Param> {
         self.data.params.iter()
-    }
-
-    pub fn is_core(&self) -> bool {
-        self.name().starts_with("core::")
-    }
-
-    pub fn is_constructor(&self) -> bool {
-        self.name().ends_with("constructor")
     }
 
     pub fn get_statements(&self) -> &Vec<SierraStatement> {
@@ -67,6 +88,10 @@ impl<'a> Function<'a> {
             .analyze(&self.statements, self.data.entry_point.0);
         self.cfg_optimized
             .analyze(self.cfg_regular.get_basic_blocks().to_vec());
+    }
+
+    pub(super) fn set_ty(&mut self, ty: Type) {
+        self.ty = Some(ty);
     }
 
     pub fn cfg_to_dot(&self, cfg: &dyn Cfg) {

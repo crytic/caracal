@@ -2,34 +2,22 @@ use crate::detectors::detector::Result;
 use crate::detectors::get_detectors;
 use crate::{Args, CompilationUnit};
 use crate::{Filter, Print};
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
-use cairo_lang_sierra::program_registry::ProgramRegistry;
 
 pub struct CoreUnit<'a> {
     compilation_unit: CompilationUnit<'a>,
     args: Args,
-    registry: ProgramRegistry<CoreType, CoreLibfunc>,
 }
 
 impl<'a> CoreUnit<'a> {
-    pub fn new(
-        compilation_unit: CompilationUnit<'a>,
-        args: Args,
-        registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    ) -> Self {
+    pub fn new(compilation_unit: CompilationUnit<'a>, args: Args) -> Self {
         CoreUnit {
             compilation_unit,
             args,
-            registry,
         }
     }
 
     pub fn get_compilation_unit(&self) -> &CompilationUnit {
         &self.compilation_unit
-    }
-
-    pub fn get_registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
-        &self.registry
     }
 
     pub fn run(&mut self) {
@@ -67,12 +55,12 @@ impl<'a> CoreUnit<'a> {
             },
             Filter::UserFunctions => match self.args.print {
                 Some(Print::Cfg) => {
-                    for f in self.compilation_unit.functions_without_core() {
+                    for f in self.compilation_unit.functions_user_defined() {
                         f.cfg_to_dot(f.get_cfg());
                     }
                 }
                 Some(Print::CfgOptimized) => {
-                    for f in self.compilation_unit.functions_without_core() {
+                    for f in self.compilation_unit.functions_user_defined() {
                         f.cfg_to_dot(f.get_cfg_optimized());
                     }
                 }

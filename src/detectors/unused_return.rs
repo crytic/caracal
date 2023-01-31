@@ -38,11 +38,12 @@ impl Detector for UnusedReturn {
 
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
         let mut results = Vec::new();
-        for f in core.get_compilation_unit().functions_without_core() {
+        for f in core.get_compilation_unit().functions_user_defined() {
             for (i, s) in f.get_statements().iter().enumerate() {
                 if let SierraStatement::Invocation(invoc) = s {
                     let function = core
-                        .get_registry()
+                        .get_compilation_unit()
+                        .registry()
                         .get_libfunc(&invoc.libfunc_id)
                         .expect("Library function not found in the registry");
                     if let CoreConcreteLibfunc::FunctionCall(f_called) = function {
@@ -53,7 +54,8 @@ impl Detector for UnusedReturn {
                         for next_statement in f.get_statements_at(i + 1) {
                             if let SierraStatement::Invocation(invoc) = next_statement {
                                 let function = core
-                                    .get_registry()
+                                    .get_compilation_unit()
+                                    .registry()
                                     .get_libfunc(&invoc.libfunc_id)
                                     .expect("Library function not found in the registry");
                                 if let CoreConcreteLibfunc::Drop(id) = function {

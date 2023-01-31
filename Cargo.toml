@@ -9,14 +9,14 @@ edition = "2021"
 anyhow = { version = "1.0.66" }
 clap = { version = "4.1.4"}
 
-cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
-cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", version = "1.0.0-alpha.2" }
+cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
+cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", rev = "0b2bd45" }
