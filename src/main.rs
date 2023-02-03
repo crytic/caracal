@@ -1,3 +1,5 @@
+use analysis::dataflow::Engine;
+use analysis::instructions::InstructionAnalysis;
 use anyhow::{bail, Context, Ok};
 use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
 use clap::{Parser, ValueEnum};
@@ -17,6 +19,7 @@ use cairo_lang_starknet::contract::{find_contracts, get_abi};
 use crate::core::compilation_unit::CompilationUnit;
 use crate::core::core_unit::CoreUnit;
 
+mod analysis;
 mod core;
 mod detectors;
 
@@ -89,5 +92,14 @@ fn main() -> anyhow::Result<()> {
 
     let mut core = CoreUnit::new(compilation_unit, args);
     core.run();
+
+    // Test analysis
+    for f in core.get_compilation_unit().functions_user_defined() {
+        println!("Function {}", f.name());
+        let mut engine = Engine::new(f.get_cfg_optimized(), InstructionAnalysis{});
+        engine.run_analysis();
+        println!("{:?}", engine.result());
+    }
+
     Ok(())
 }
