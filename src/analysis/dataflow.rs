@@ -38,7 +38,10 @@ impl Direction for Forward {
         for bb in basic_block.get_outgoing_basic_blocks() {
             let changed = state.get_mut(bb).unwrap().join(current_state);
             if changed {
-                worklist.push_back(cfg.get_basic_block(*bb).unwrap().clone());
+                let basic_block = cfg.get_basic_block(*bb).unwrap().clone();
+                if !worklist.contains(&basic_block) {
+                    worklist.push_back(basic_block);
+                }
             }
         }
     }
@@ -65,7 +68,10 @@ impl Direction for Backward {
         for bb in basic_block.get_incoming_basic_blocks() {
             let changed = state.get_mut(bb).unwrap().join(current_state);
             if changed {
-                worklist.push_back(cfg.get_basic_block(*bb).unwrap().clone());
+                let basic_block = cfg.get_basic_block(*bb).unwrap().clone();
+                if !worklist.contains(&basic_block) {
+                    worklist.push_back(basic_block);
+                }
             }
         }
     }

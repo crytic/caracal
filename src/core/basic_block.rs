@@ -8,6 +8,12 @@ pub struct BasicBlock {
     outgoing_basic_blocks: Vec<usize>,
 }
 
+impl PartialEq for BasicBlock {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
 impl BasicBlock {
     pub fn new(id: usize, instructions: Vec<Instruction>) -> Self {
         BasicBlock {

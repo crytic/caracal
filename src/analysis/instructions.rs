@@ -41,7 +41,7 @@ impl Domain for InstructionDomain {
     }
 }
 
-pub struct InstructionAnalysis {}
+pub struct InstructionAnalysis;
 
 impl Analysis for InstructionAnalysis {
     type Direction = Forward;

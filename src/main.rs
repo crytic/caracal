@@ -96,7 +96,7 @@ fn main() -> anyhow::Result<()> {
     // Test analysis
     for f in core.get_compilation_unit().functions_user_defined() {
         println!("Function {}", f.name());
-        let mut engine = Engine::new(f.get_cfg_optimized(), InstructionAnalysis{});
+        let mut engine = Engine::new(f.get_cfg_optimized(), InstructionAnalysis);
         engine.run_analysis();
         println!("{:?}", engine.result());
     }
