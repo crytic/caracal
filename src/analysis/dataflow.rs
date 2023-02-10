@@ -1,5 +1,5 @@
 use crate::core::{basic_block::BasicBlock, cfg::Cfg, instruction::Instruction};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 use super::traversal;
 
@@ -99,6 +99,7 @@ pub trait Analysis {
     fn bottom_value(&self) -> Self::Domain;
 }
 
+/// Engine to solve data flow problems
 pub struct Engine<'a, A: Analysis> {
     cfg: &'a dyn Cfg,
     analysis: A,
@@ -109,6 +110,7 @@ impl<'a, A> Engine<'a, A>
 where
     A: Analysis,
 {
+    /// Create a new Engine to solve the analysis on the cfg
     pub fn new(cfg: &'a dyn Cfg, analysis: A) -> Self {
         let basic_blocks = cfg.get_basic_blocks().len();
         let mut state = HashMap::with_capacity(basic_blocks);
@@ -125,6 +127,7 @@ where
         }
     }
 
+    /// Run the analysis to a fix point
     pub fn run_analysis(&mut self) {
         let basic_blocks = self.cfg.get_basic_blocks();
         let mut worklist: VecDeque<BasicBlock> = VecDeque::with_capacity(basic_blocks.len());
@@ -157,6 +160,7 @@ where
         }
     }
 
+    /// Return the result of the analysis after run_analysis was called
     pub fn result(&self) -> &HashMap<usize, A::Domain> {
         &self.state
     }
