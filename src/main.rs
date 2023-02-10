@@ -1,5 +1,4 @@
 use anyhow::{bail, Context, Ok};
-use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
 use clap::{Parser, ValueEnum};
 use std::path::PathBuf;
 
@@ -13,10 +12,12 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::abi::Contract;
 use cairo_lang_starknet::contract::{find_contracts, get_abi};
+use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
 
 use crate::core::compilation_unit::CompilationUnit;
 use crate::core::core_unit::CoreUnit;
 
+mod analysis;
 mod core;
 mod detectors;
 
@@ -89,5 +90,6 @@ fn main() -> anyhow::Result<()> {
 
     let mut core = CoreUnit::new(compilation_unit, args);
     core.run();
+
     Ok(())
 }

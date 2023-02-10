@@ -118,8 +118,10 @@ impl<'a> Function<'a> {
             bb.get_instructions()
                 .iter()
                 .for_each(|i| ins.push_str(&format!("{i}\n")));
-            f.write_all(format!("{}[label=\"{}\"]\n", bb.get_id(), ins).as_bytes())
-                .unwrap();
+            f.write_all(
+                format!("{}[label=\"BB {}\n{}\"]\n", bb.get_id(), bb.get_id(), ins).as_bytes(),
+            )
+            .unwrap();
 
             for destination in bb.get_outgoing_basic_blocks().iter() {
                 f.write_all(format!("{} -> {}\n", bb.get_id(), destination).as_bytes())
