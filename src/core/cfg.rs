@@ -9,7 +9,7 @@ pub trait Cfg {
     fn get_basic_block(&self, id: usize) -> Option<&BasicBlock>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CfgRegular {
     basic_blocks: Vec<BasicBlock>,
 }
@@ -218,7 +218,7 @@ impl Cfg for CfgRegular {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CfgOptimized {
     basic_blocks: Vec<BasicBlock>,
 }

@@ -1,22 +1,30 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use super::function::{Function, Type};
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
-use cairo_lang_sierra::program_registry::ProgramRegistry;
-
+use crate::analysis::taint::Taint;
+use crate::analysis::taint::WrapperVariable;
+use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{
-    Function as SierraFunction, Program, Statement as SierraStatement,
+    Function as SierraFunction, GenStatement, Program, Statement as SierraStatement,
 };
+use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_starknet::abi::{
     Contract,
     Item::{Event, Function as AbiFunction},
 };
 
 pub struct CompilationUnit<'a> {
+    /// The compiled sierra program
     sierra_program: &'a Program,
-    functions: Vec<Function<'a>>,
+    /// Functions of the program
+    functions: Vec<Function>,
+    /// Abi of the compiled starknet contract
     abi: Contract,
+    /// Helper registry to get the concrete type from an id
     registry: ProgramRegistry<CoreType, CoreLibfunc>,
+    /// Function name to taints
+    taint: HashMap<String, Taint>,
 }
 
 impl<'a> CompilationUnit<'a> {
@@ -30,6 +38,7 @@ impl<'a> CompilationUnit<'a> {
             functions: Vec::new(),
             abi,
             registry,
+            taint: HashMap::new(),
         }
     }
 
@@ -41,9 +50,11 @@ impl<'a> CompilationUnit<'a> {
     /// Returns the functions that are defined by the user
     /// Constructor - External - View - Private
     pub fn functions_user_defined(&self) -> impl Iterator<Item = &Function> {
-        self.functions.iter().filter(|f| match f.ty() {
-            Type::Constructor | Type::External | Type::View | Type::Private => true,
-            _ => false,
+        self.functions.iter().filter(|f| {
+            matches!(
+                f.ty(),
+                Type::Constructor | Type::External | Type::View | Type::Private
+            )
         })
     }
 
@@ -51,7 +62,27 @@ impl<'a> CompilationUnit<'a> {
         &self.registry
     }
 
-    fn append_function(&mut self, data: &'a SierraFunction, statements: Vec<SierraStatement>) {
+    /// Return true if the variable is tainted i.e. user inputs can control it in some way
+    pub fn is_tainted(&self, variable: WrapperVariable) -> bool {
+        let mut parameters = HashSet::new();
+        for external_function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
+            for param in external_function.params() {
+                parameters.insert(WrapperVariable::new(
+                    external_function.name(),
+                    param.id.clone(),
+                ));
+            }
+        }
+        // Get the taint for the function where the variable appear
+        let taint = self.taint.get(variable.function()).unwrap();
+        if taint.taints_any_sources(&parameters, &variable) {
+            return true;
+        }
+
+        false
+    }
+
+    fn append_function(&mut self, data: SierraFunction, statements: Vec<SierraStatement>) {
         self.functions.push(Function::new(data, statements));
     }
 
@@ -180,7 +211,7 @@ impl<'a> CompilationUnit<'a> {
             let function = &self.sierra_program.funcs[0];
 
             self.append_function(
-                function,
+                function.clone(),
                 self.sierra_program.statements
                     [function.entry_point.0..self.sierra_program.statements.len()]
                     .to_vec(),
@@ -189,7 +220,7 @@ impl<'a> CompilationUnit<'a> {
             while let Some(funcs) = funcs_chunks.next() {
                 if funcs_chunks.peek().is_some() {
                     self.append_function(
-                        &funcs[0],
+                        funcs[0].clone(),
                         self.sierra_program.statements
                             [funcs[0].entry_point.0..funcs[1].entry_point.0]
                             .to_vec(),
@@ -197,13 +228,13 @@ impl<'a> CompilationUnit<'a> {
                 } else {
                     // Last pair
                     self.append_function(
-                        &funcs[0],
+                        funcs[0].clone(),
                         self.sierra_program.statements
                             [funcs[0].entry_point.0..funcs[1].entry_point.0]
                             .to_vec(),
                     );
                     self.append_function(
-                        &funcs[1],
+                        funcs[1].clone(),
                         self.sierra_program.statements
                             [funcs[1].entry_point.0..self.sierra_program.statements.len()]
                             .to_vec(),
@@ -213,7 +244,112 @@ impl<'a> CompilationUnit<'a> {
         }
 
         self.set_functions_type();
+
+        let mut functions_copy = Vec::with_capacity(self.functions.len());
+        functions_copy.clone_from(&self.functions);
+
         // Analyze each function
-        self.functions.iter_mut().for_each(|f| f.analyze());
+        self.functions
+            .iter_mut()
+            .for_each(|f| f.analyze(&functions_copy, &self.registry));
+
+        // Compute taints
+        self.functions.iter().for_each(|f| {
+            self.taint
+                .insert(f.name(), Taint::new(f.get_statements(), f.name()));
+        });
+
+        // Propagate taints to private functions
+        self.propagate_taints();
+    }
+
+    fn propagate_taints(&mut self) {
+        // 1-per ogni external function itera private_functions_calls
+        // 2-check se ext function args taint parametri usati in privat function call - taints_any_sinks_variable metti in sinks tutti i param usati in privat call
+        // 3-propaga
+
+        let mut arguments_external_functions: HashSet<WrapperVariable> = HashSet::new();
+        for function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
+            for param in function.params() {
+                arguments_external_functions
+                    .insert(WrapperVariable::new(function.name(), param.id.clone()));
+            }
+        }
+
+        let mut changed = true;
+        while changed {
+            for calling_function in self
+                .functions
+                .iter()
+                .filter(|f| *f.ty() == Type::External || *f.ty() == Type::Private)
+            {
+                changed = false;
+                for function_call in calling_function.private_functions_calls() {
+                    // It will always be an invocation
+                    if let GenStatement::Invocation(invoc) = function_call {
+                        // The core lib func instance
+                        let lib_func = self
+                            .registry
+                            .get_libfunc(&invoc.libfunc_id)
+                            .expect("Library function not found in the registry");
+
+                        // This is always true since private_function_calls contain only FunctionCall statement
+                        if let CoreConcreteLibfunc::FunctionCall(f_called) = lib_func {
+                            let taint_copy = self.taint.clone();
+                            let external_taint = taint_copy.get(&calling_function.name()).unwrap();
+
+                            // Variables used as arguments in the call to the private function
+                            let function_called_args: HashSet<WrapperVariable> = invoc
+                                .args
+                                .iter()
+                                .map(|arg| {
+                                    WrapperVariable::new(calling_function.name(), arg.clone())
+                                })
+                                .collect();
+
+                            // Calling function's parameters
+                            for param in calling_function.params() {
+                                // Check if the arguments used to call the private function are tainted by the calling function's parameters
+                                for sink in external_taint.taints_any_sinks_variable(
+                                    &WrapperVariable::new(
+                                        calling_function.name(),
+                                        param.id.clone(),
+                                    ),
+                                    &function_called_args,
+                                ) {
+                                    // If the sink is tainted by some parameters of external functions
+                                    // then we need to add those parameters as source for the current sink
+                                    for source in external_taint.taints_any_sources_variable(
+                                        &arguments_external_functions,
+                                        &sink,
+                                    ) {
+                                        let function_called_name = f_called
+                                            .function
+                                            .id
+                                            .debug_name
+                                            .as_ref()
+                                            .unwrap()
+                                            .to_string();
+
+                                        let private_taint =
+                                            self.taint.get_mut(&function_called_name).unwrap();
+
+                                        // We convert the id to be the private function's formal parameter id and not the actual parameter id
+                                        let sink_converted = WrapperVariable::new(
+                                            function_called_name,
+                                            VarId::new(sink.variable().id - invoc.args[0].id),
+                                        );
+                                        // Add the source i.e. the variable of the external function
+                                        if private_taint.add_taint(source, sink_converted) {
+                                            changed = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
