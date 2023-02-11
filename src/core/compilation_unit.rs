@@ -63,7 +63,8 @@ impl<'a> CompilationUnit<'a> {
     }
 
     /// Return true if the variable is tainted i.e. user inputs can control it in some way
-    pub fn is_tainted(&self, variable: WrapperVariable) -> bool {
+    pub fn is_tainted(&self, function_name: String, variable: VarId) -> bool {
+        let wrapped_variable = WrapperVariable::new(function_name, variable);
         let mut parameters = HashSet::new();
         for external_function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
             for param in external_function.params() {
@@ -74,8 +75,8 @@ impl<'a> CompilationUnit<'a> {
             }
         }
         // Get the taint for the function where the variable appear
-        let taint = self.taint.get(variable.function()).unwrap();
-        if taint.taints_any_sources(&parameters, &variable) {
+        let taint = self.taint.get(wrapped_variable.function()).unwrap();
+        if taint.taints_any_sources(&parameters, &wrapped_variable) {
             return true;
         }
 
