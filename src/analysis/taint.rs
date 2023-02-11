@@ -10,6 +10,7 @@ use std::collections::{HashMap, HashSet};
 pub struct WrapperVariable {
     /// The function where the variable appear
     function: String,
+    /// The variable's id
     variable: VarId,
 }
 
@@ -29,9 +30,9 @@ impl WrapperVariable {
 
 #[derive(Debug, Clone, Default)]
 pub struct Taint {
-    /// Source variable id to set of sink variables id
+    /// Source WrapperVariable to set of sink WrapperVariable
     /// e.g. instruction reads variables 3, 4 and has 5 as output
-    /// we will add (3, (5)) and (4, (5))
+    /// we will add (3, (5)) and (4, (5)); variable 5 is tainted by 3 and 4
     map: HashMap<WrapperVariable, HashSet<WrapperVariable>>,
 }
 
@@ -116,12 +117,14 @@ impl Taint {
     }
 }
 
+/// Analyze each instruction in the current function and populate the taint map
 fn analyze(
     map: &mut HashMap<WrapperVariable, HashSet<WrapperVariable>>,
     instructions: &[SierraStatement],
     function: String,
 ) {
     for instruction in instructions.iter() {
+        // We only care about GenStatement::Invocation because GenStatement::Return doesn't add any taint
         if let GenStatement::Invocation(inv) = instruction {
             let mut vars_written = Vec::new();
             let vars_read = &inv.args;
@@ -129,6 +132,7 @@ fn analyze(
             for branch in inv.branches.iter() {
                 vars_written.extend(branch.results.clone());
             }
+            // We add for each variable written all the variables read as taint
             for sink in vars_written.iter() {
                 for source in vars_read.iter() {
                     let sinks = map

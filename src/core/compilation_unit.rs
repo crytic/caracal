@@ -269,11 +269,9 @@ impl<'a> CompilationUnit<'a> {
         self.propagate_taints();
     }
 
+    /// Propagate the taints from external functions to private functions
     fn propagate_taints(&mut self) {
-        // 1-per ogni external function itera private_functions_calls
-        // 2-check se ext function args taint parametri usati in privat function call - taints_any_sinks_variable metti in sinks tutti i param usati in privat call
-        // 3-propaga
-
+        // Collect the arguments of all the external functions
         let mut arguments_external_functions: HashSet<WrapperVariable> = HashSet::new();
         for function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
             for param in function.params() {
@@ -283,6 +281,8 @@ impl<'a> CompilationUnit<'a> {
         }
 
         let mut changed = true;
+        // Iterate external and private functions and propagate the taints to each private function they call
+        // until a fixed point when no new informations were propagated 
         while changed {
             for calling_function in self
                 .functions
