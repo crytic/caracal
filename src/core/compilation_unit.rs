@@ -83,6 +83,11 @@ impl<'a> CompilationUnit<'a> {
         false
     }
 
+    /// Return the function_name's Taint if exist
+    pub fn get_taint(&self, function_name: &str) -> Option<&Taint> {
+        self.taint.get(function_name)
+    }
+
     fn append_function(&mut self, data: SierraFunction, statements: Vec<SierraStatement>) {
         self.functions.push(Function::new(data, statements));
     }
