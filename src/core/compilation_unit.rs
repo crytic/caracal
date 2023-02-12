@@ -83,7 +83,9 @@ impl<'a> CompilationUnit<'a> {
         false
     }
 
-    /// Return the function_name's Taint if exist
+    /// Return the function_name's Taint if exist.
+    /// This can be useful to access to low level taint functions present in Taint
+    /// compared to the more general is_tainted
     pub fn get_taint(&self, function_name: &str) -> Option<&Taint> {
         self.taint.get(function_name)
     }
@@ -208,6 +210,8 @@ impl<'a> CompilationUnit<'a> {
         }
     }
 
+    /// Analyze the Sierra program and set the internal data structure
+    /// such as create the functions with the corresponding statements
     pub fn analyze(&mut self) {
         // Add the functions in the sierra program
         let mut funcs_chunks = self.sierra_program.funcs.windows(2).peekable();
@@ -282,7 +286,7 @@ impl<'a> CompilationUnit<'a> {
 
         let mut changed = true;
         // Iterate external and private functions and propagate the taints to each private function they call
-        // until a fixed point when no new informations were propagated 
+        // until a fixpoint when no new informations were propagated 
         while changed {
             for calling_function in self
                 .functions

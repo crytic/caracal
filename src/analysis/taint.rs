@@ -19,10 +19,12 @@ impl WrapperVariable {
         WrapperVariable { function, variable }
     }
 
+    /// Return the function's name where this variable is present
     pub fn function(&self) -> &String {
         &self.function
     }
 
+    /// Return the variable
     pub fn variable(&self) -> &VarId {
         &self.variable
     }
