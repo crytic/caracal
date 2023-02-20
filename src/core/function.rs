@@ -1,10 +1,14 @@
 use std::io::Write;
 
 use super::cfg::{Cfg, CfgOptimized, CfgRegular};
+use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_sierra::program::{Function as SierraFunction, Param, Statement as SierraStatement};
+use cairo_lang_sierra::program::{
+    Function as SierraFunction, GenStatement, Param, Statement as SierraStatement,
+};
+use cairo_lang_sierra::program_registry::ProgramRegistry;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Type {
     /// External function defined by the user
     External,
@@ -25,10 +29,10 @@ pub enum Type {
     Core,
 }
 
-#[derive(Debug)]
-pub struct Function<'a> {
+#[derive(Clone)]
+pub struct Function {
     /// Underlying Function data
-    data: &'a SierraFunction,
+    data: SierraFunction,
     /// Type of function
     ty: Option<Type>,
     /// The sequence of statements
@@ -37,16 +41,31 @@ pub struct Function<'a> {
     cfg_regular: CfgRegular,
     /// An optimized CFG from the statements
     cfg_optimized: CfgOptimized,
+    /// Storage variables read (NOTE it doesn't have vars read using the syscall directly)
+    storage_vars_read: Vec<SierraStatement>,
+    /// Storage variables written (NOTE it doesn't have vars written using the syscall directly)
+    storage_vars_written: Vec<SierraStatement>,
+    /// Core functions called
+    core_functions_calls: Vec<SierraStatement>,
+    /// Private functions called
+    private_functions_calls: Vec<SierraStatement>,
+    /// Events emitted
+    events_emitted: Vec<SierraStatement>,
 }
 
-impl<'a> Function<'a> {
-    pub fn new(data: &'a SierraFunction, statements: Vec<SierraStatement>) -> Self {
+impl Function {
+    pub fn new(data: SierraFunction, statements: Vec<SierraStatement>) -> Self {
         Function {
             data,
             ty: None,
             statements,
             cfg_regular: CfgRegular::new(),
             cfg_optimized: CfgOptimized::new(),
+            storage_vars_read: Vec::new(),
+            storage_vars_written: Vec::new(),
+            core_functions_calls: Vec::new(),
+            private_functions_calls: Vec::new(),
+            events_emitted: Vec::new(),
         }
     }
 
@@ -59,11 +78,59 @@ impl<'a> Function<'a> {
         self.ty.as_ref().unwrap()
     }
 
+    pub fn storage_vars_read(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.storage_vars_read.iter()
+    }
+
+    pub fn storage_vars_written(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.storage_vars_written.iter()
+    }
+
+    pub fn core_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.core_functions_calls.iter()
+    }
+
+    pub fn private_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.private_functions_calls.iter()
+    }
+
+    /// Function return variables without the builtins
     pub fn returns(&self) -> impl Iterator<Item = &ConcreteTypeId> {
+        self.data.signature.ret_types.iter().filter(|r| {
+            ![
+                "Pedersen",
+                "RangeCheck",
+                "Bitwise",
+                "EcOp",
+                "GasBuiltin",
+                "System",
+            ]
+            .contains(&r.debug_name.clone().unwrap().as_str())
+        })
+    }
+
+    /// Function return variables
+    pub fn returns_all(&self) -> impl Iterator<Item = &ConcreteTypeId> {
         self.data.signature.ret_types.iter()
     }
 
+    /// Function parameters without the builtins
     pub fn params(&self) -> impl Iterator<Item = &Param> {
+        self.data.params.iter().filter(|p| {
+            ![
+                "Pedersen",
+                "RangeCheck",
+                "Bitwise",
+                "EcOp",
+                "GasBuiltin",
+                "System",
+            ]
+            .contains(&p.ty.debug_name.clone().unwrap().as_str())
+        })
+    }
+
+    /// Function parameters
+    pub fn params_all(&self) -> impl Iterator<Item = &Param> {
         self.data.params.iter()
     }
 
@@ -83,11 +150,56 @@ impl<'a> Function<'a> {
         &self.cfg_optimized
     }
 
-    pub fn analyze(&mut self) {
+    pub fn analyze(
+        &mut self,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ) {
         self.cfg_regular
             .analyze(&self.statements, self.data.entry_point.0);
         self.cfg_optimized
             .analyze(self.cfg_regular.get_basic_blocks().to_vec());
+        self.set_meta_informations(functions, registry);
+    }
+
+    /// Set the meta informations such as storage variables read, storage variables written, core function called
+    /// private function called, events emitted
+    fn set_meta_informations(
+        &mut self,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ) {
+        for s in self.statements.iter() {
+            if let GenStatement::Invocation(invoc) = s {
+                let lib_func = registry
+                    .get_libfunc(&invoc.libfunc_id)
+                    .expect("Library function not found in the registry");
+                if let CoreConcreteLibfunc::FunctionCall(f_called) = lib_func {
+                    // We search for the function called in our list of functions to know its type
+                    for function in functions.iter() {
+                        let function_name = function.name();
+                        if function_name.as_str()
+                            == f_called.function.id.debug_name.as_ref().unwrap()
+                        {
+                            match function.ty() {
+                                Type::Storage => {
+                                    if function_name.ends_with("read") {
+                                        self.storage_vars_read.push(s.clone());
+                                    } else if function_name.ends_with("write") {
+                                        self.storage_vars_written.push(s.clone());
+                                    }
+                                }
+                                Type::Event => self.events_emitted.push(s.clone()),
+                                Type::Core => self.core_functions_calls.push(s.clone()),
+                                Type::Private => self.private_functions_calls.push(s.clone()),
+                                _ => (),
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub(super) fn set_ty(&mut self, ty: Type) {
