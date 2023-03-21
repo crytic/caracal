@@ -8,6 +8,16 @@ use cairo_lang_sierra::program::{
 };
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 
+const BUILTINS: [&str; 7] = [
+    "Pedersen",
+    "RangeCheck",
+    "Bitwise",
+    "EcOp",
+    "SegmentArena",
+    "GasBuiltin",
+    "System",
+];
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Type {
     /// External function defined by the user
@@ -27,6 +37,10 @@ pub enum Type {
     Wrapper,
     /// Function of the core library
     Core,
+    /// Function of a trait with the ABI attribute that does a call contract
+    AbiCallContract,
+    /// Function of a trait with the ABI attribute that does a library call
+    AbiLibraryCall,
 }
 
 #[derive(Clone)]
@@ -96,17 +110,11 @@ impl Function {
 
     /// Function return variables without the builtins
     pub fn returns(&self) -> impl Iterator<Item = &ConcreteTypeId> {
-        self.data.signature.ret_types.iter().filter(|r| {
-            ![
-                "Pedersen",
-                "RangeCheck",
-                "Bitwise",
-                "EcOp",
-                "GasBuiltin",
-                "System",
-            ]
-            .contains(&r.debug_name.clone().unwrap().as_str())
-        })
+        self.data
+            .signature
+            .ret_types
+            .iter()
+            .filter(|r| !BUILTINS.contains(&r.debug_name.clone().unwrap().as_str()))
     }
 
     /// Function return variables
@@ -116,17 +124,10 @@ impl Function {
 
     /// Function parameters without the builtins
     pub fn params(&self) -> impl Iterator<Item = &Param> {
-        self.data.params.iter().filter(|p| {
-            ![
-                "Pedersen",
-                "RangeCheck",
-                "Bitwise",
-                "EcOp",
-                "GasBuiltin",
-                "System",
-            ]
-            .contains(&p.ty.debug_name.clone().unwrap().as_str())
-        })
+        self.data
+            .params
+            .iter()
+            .filter(|p| !BUILTINS.contains(&p.ty.debug_name.clone().unwrap().as_str()))
     }
 
     /// Function parameters
