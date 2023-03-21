@@ -105,7 +105,7 @@ fn main() -> anyhow::Result<()> {
         .get_sierra_program(main_crate_ids)
         .ok()
         .context("Compilation failed without any diagnostics.")?;
-    let sierra = replace_sierra_ids_in_program(&mut db, &sierra);
+    let sierra = replace_sierra_ids_in_program(&db, &sierra);
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra)?;
     let compilation_unit = CompilationUnit::new(&sierra, abi, registry);
 

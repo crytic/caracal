@@ -162,9 +162,9 @@ impl<'a> CompilationUnit<'a> {
                     // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::read
                     let second_part = full_name.split_once(&base_module);
 
-                    if second_part.is_some() {
+                    if let Some(second_part) = second_part {
                         // For a storage variable function we would get ["name", "read"]
-                        let second_part = second_part.unwrap().1.split("::").collect::<Vec<&str>>();
+                        let second_part = second_part.1.split("::").collect::<Vec<&str>>();
                         // We assume it's a function for a storage variable
                         // however if there is an immediate submodule with a read/write/address function
                         // it will be incorrectly set as Storage
@@ -182,13 +182,13 @@ impl<'a> CompilationUnit<'a> {
                 } else if full_name.ends_with("LibraryDispatcher") {
                     f.set_ty(Type::AbiLibraryCall)
                 // ABI trait function for call contract
-                } else if full_name.ends_with("Dispatcher") { 
+                } else if full_name.ends_with("Dispatcher") {
                     f.set_ty(Type::AbiCallContract)
                 } else {
                     // Event or private function
                     let second_part = full_name.split_once(&base_module);
-                    if second_part.is_some() {
-                        let second_part = second_part.unwrap().1;
+                    if let Some(second_part) = second_part {
+                        let second_part = second_part.1;
                         // If it contains :: it means it's a function in a submodule so it should be private
                         if second_part.contains("::") {
                             f.set_ty(Type::Private);
