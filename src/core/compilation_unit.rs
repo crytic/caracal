@@ -158,46 +158,62 @@ impl<'a> CompilationUnit<'a> {
                     || full_name.ends_with("::read")
                     || full_name.ends_with("::write")
                 {
-                    // Storage variable functions e.g. erc20::erc20::ERC20::name::read
-                    // Safe unwrap at this point it must start with the base module
-                    let second_part = full_name
-                        .split_once(&base_module)
-                        .unwrap()
-                        .1
-                        .split("::")
-                        .collect::<Vec<&str>>();
-                    // We assume it's a function for a storage variable
-                    // however if there is an immediate submodule with a read/write/address function
-                    // it will be incorrectly set as Storage
-                    if second_part.len() == 2 {
-                        f.set_ty(Type::Storage);
-                    } else {
-                        f.set_ty(Type::Private);
-                    }
-                } else {
-                    // Event or private function
-                    // Safe unwrap at this point it must start with the base module
-                    let second_part = full_name.split_once(&base_module).unwrap().1;
-                    // If it contains :: it means it's a function in a submodule so it should be private
-                    if second_part.contains("::") {
-                        f.set_ty(Type::Private);
-                    } else {
-                        // Could be an event or a private function in the contract's module
-                        let possible_event_name = full_name.rsplit_once("::").unwrap().1;
+                    // We split by the base_module if it's not Some then we are not in the contract module
+                    // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::read
+                    let second_part = full_name.split_once(&base_module);
 
-                        let mut found = false;
-                        for item in self.abi.items.iter() {
-                            if let Event(e) = item {
-                                if e.name == possible_event_name {
-                                    f.set_ty(Type::Event);
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if !found {
+                    if second_part.is_some() {
+                        // For a storage variable function we would get ["name", "read"]
+                        let second_part = second_part.unwrap().1.split("::").collect::<Vec<&str>>();
+                        // We assume it's a function for a storage variable
+                        // however if there is an immediate submodule with a read/write/address function
+                        // it will be incorrectly set as Storage
+                        if second_part.len() == 2 {
+                            f.set_ty(Type::Storage);
+                        } else {
                             f.set_ty(Type::Private);
                         }
+                    } else {
+                        // We are not in the contract module
+                        // set the function to private
+                        f.set_ty(Type::Private);
+                    }
+                // ABI trait function for library call
+                } else if full_name.ends_with("LibraryDispatcher") {
+                    f.set_ty(Type::AbiLibraryCall)
+                // ABI trait function for call contract
+                } else if full_name.ends_with("Dispatcher") { 
+                    f.set_ty(Type::AbiCallContract)
+                } else {
+                    // Event or private function
+                    let second_part = full_name.split_once(&base_module);
+                    if second_part.is_some() {
+                        let second_part = second_part.unwrap().1;
+                        // If it contains :: it means it's a function in a submodule so it should be private
+                        if second_part.contains("::") {
+                            f.set_ty(Type::Private);
+                        } else {
+                            // Could be an event or a private function in the contract's module
+                            let possible_event_name = full_name.rsplit_once("::").unwrap().1;
+
+                            let mut found = false;
+                            for item in self.abi.items.iter() {
+                                if let Event(e) = item {
+                                    if e.name == possible_event_name {
+                                        f.set_ty(Type::Event);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if !found {
+                                f.set_ty(Type::Private);
+                            }
+                        }
+                    } else {
+                        // We are not in the contract module
+                        // set the function to private
+                        f.set_ty(Type::Private);
                     }
                 }
             }
@@ -286,7 +302,7 @@ impl<'a> CompilationUnit<'a> {
 
         let mut changed = true;
         // Iterate external and private functions and propagate the taints to each private function they call
-        // until a fixpoint when no new informations were propagated 
+        // until a fixpoint when no new informations were propagated
         while changed {
             for calling_function in self
                 .functions
