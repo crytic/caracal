@@ -71,10 +71,10 @@ impl Detector for UnusedReturn {
                                             })
                                         }
                                     }
+                                    break; // Not a Drop statement we exit
                                 }
-                                break; // Not a Drop statement we exit
+                                break; // Return statement we exit
                             }
-                            break; // Return statement we exit
                         }
                     }
                 }
