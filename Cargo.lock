@@ -558,6 +558,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "coin_cbc"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f86c5252b7b745adc0bc8a724171018dd2fc1e63629f7f8ec2f28a66b0d6ed7"
+dependencies = [
+ "coin_cbc_sys",
+ "lazy_static",
+]
+
+[[package]]
+name = "coin_cbc_sys"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "085619f8bdc38e24e25c6336ecc3f2e6c0543d67566dff6daef0e32f7ac20f76"
+dependencies = [
+ "pkg-config",
+]
+
+[[package]]
 name = "colored"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -657,7 +676,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "scratch",
- "syn 2.0.6",
+ "syn 2.0.7",
 ]
 
 [[package]]
@@ -674,7 +693,7 @@ checksum = "631569015d0d8d54e6c241733f944042623ab6df7bc3be7466874b05fcdb1c5f"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.6",
+ "syn 2.0.7",
 ]
 
 [[package]]
@@ -835,6 +854,7 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eed4d07599e3cdb52477f1d36bef936c89ce854c452e7026b2ba327b93c86f61"
 dependencies = [
+ "coin_cbc",
  "fnv",
  "minilp",
 ]
@@ -1271,6 +1291,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db8bcd96cb740d03149cbad5518db9fd87126a10ab519c011893b1754134c468"
 
 [[package]]
+name = "pkg-config"
+version = "0.3.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
+
+[[package]]
 name = "precomputed-hash"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1469,7 +1495,7 @@ checksum = "e801c1712f48475582b7696ac71e0ca34ebb30e09338425384269d9717c62cad"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.6",
+ "syn 2.0.7",
 ]
 
 [[package]]
@@ -1530,6 +1556,7 @@ name = "starknet-static-analysis"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bit-vec",
  "cairo-lang-compiler",
  "cairo-lang-defs",
  "cairo-lang-filesystem",
@@ -1542,6 +1569,11 @@ dependencies = [
  "cairo-lang-syntax",
  "cairo-lang-utils",
  "clap",
+ "fnv",
+ "good_lp",
+ "io-lifetimes",
+ "rustix",
+ "string_cache",
 ]
 
 [[package]]
@@ -1555,6 +1587,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "phf_shared",
  "precomputed-hash",
+ "serde",
 ]
 
 [[package]]
@@ -1576,9 +1609,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.6"
+version = "2.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ece519cfaf36269ea69d16c363fa1d59ceba8296bbfbfc003c3176d01f2816ee"
+checksum = "9a9a90d19f27bb60792270bb90225f96d97fc5705395134b2ca1dcbb3acc27f4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1622,7 +1655,7 @@ checksum = "f9456a42c5b0d803c8cd86e73dd7cc9edd429499f37a3550d286d5e86720569f"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.6",
+ "syn 2.0.7",
 ]
 
 [[package]]

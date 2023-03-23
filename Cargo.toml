@@ -7,7 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = { version = "1.0.66" }
+anyhow = { version = "1.0.70" }
 clap = { version = "4.1.4"}
 
 cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
@@ -21,3 +21,11 @@ cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", rev
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
 cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
 cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
+
+# For -Zminimal-versions
+string_cache = "0.8.4"
+io-lifetimes = "1.0.2"
+bit-vec = "0.6.3"
+good_lp = "1.4.0"
+rustix = "0.36.9"
+fnv = "1.0.5"
