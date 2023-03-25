@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = { version = "1.0.66" }
-clap = { version = "4.1.4"}
+anyhow = { version = "1.0" }
+clap = { version = "4.1"}
 
 cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
 cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
@@ -20,3 +20,12 @@ cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", rev
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
 cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
 cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", rev = "9c19056" }
+
+[dev-dependencies]
+insta = { version = "1.29", features = ["glob"] }
+
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3
