@@ -1,4 +1,4 @@
-use self::detector::{Confidence, Detector, Impact};
+use self::detector::Detector;
 
 pub mod detector;
 

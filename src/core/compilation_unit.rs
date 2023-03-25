@@ -14,9 +14,9 @@ use cairo_lang_starknet::abi::{
     Item::{Event, Function as AbiFunction},
 };
 
-pub struct CompilationUnit<'a> {
+pub struct CompilationUnit {
     /// The compiled sierra program
-    sierra_program: &'a Program,
+    sierra_program: Program,
     /// Functions of the program
     functions: Vec<Function>,
     /// Abi of the compiled starknet contract
@@ -27,9 +27,9 @@ pub struct CompilationUnit<'a> {
     taint: HashMap<String, Taint>,
 }
 
-impl<'a> CompilationUnit<'a> {
+impl CompilationUnit {
     pub fn new(
-        sierra_program: &'a Program,
+        sierra_program: Program,
         abi: Contract,
         registry: ProgramRegistry<CoreType, CoreLibfunc>,
     ) -> Self {
@@ -179,10 +179,10 @@ impl<'a> CompilationUnit<'a> {
                         f.set_ty(Type::Private);
                     }
                 // ABI trait function for library call
-                } else if full_name.ends_with("LibraryDispatcher") {
+                } else if full_name.contains("LibraryDispatcherImpl::") {
                     f.set_ty(Type::AbiLibraryCall)
                 // ABI trait function for call contract
-                } else if full_name.ends_with("Dispatcher") {
+                } else if full_name.contains("DispatcherImpl::") {
                     f.set_ty(Type::AbiCallContract)
                 } else {
                     // Event or private function
@@ -213,6 +213,7 @@ impl<'a> CompilationUnit<'a> {
                     } else {
                         // We are not in the contract module
                         // set the function to private
+                        println!("FULLANEM {full_name}");
                         f.set_ty(Type::Private);
                     }
                 }
@@ -230,7 +231,8 @@ impl<'a> CompilationUnit<'a> {
     /// such as create the functions with the corresponding statements
     pub fn analyze(&mut self) {
         // Add the functions in the sierra program
-        let mut funcs_chunks = self.sierra_program.funcs.windows(2).peekable();
+        let funcs = self.sierra_program.funcs.clone();
+        let mut funcs_chunks = funcs.windows(2).peekable();
 
         // There is only 1 function
         if funcs_chunks.peek().is_none() {
