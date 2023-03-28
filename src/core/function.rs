@@ -105,6 +105,10 @@ impl Function {
         self.private_functions_calls.iter()
     }
 
+    pub fn events_emitted(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.events_emitted.iter()
+    }
+
     pub fn external_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
         self.external_functions_calls.iter()
     }
