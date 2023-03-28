@@ -85,22 +85,3 @@ impl CoreUnit {
         &self.compilation_unit
     }
 }
-
-#[test]
-fn test_detectors() {
-    use crate::detectors::{detector::Result, get_detectors};
-
-    insta::glob!("../../tests/detectors", "*.cairo", |path| {
-        let opts = CoreOpts {
-            file: path.to_path_buf(),
-            corelib: Some(PathBuf::from(
-                env::var("CARGO_MANIFEST_DIR").unwrap() + "/src/corelib/src",
-            )),
-        };
-        let core = CoreUnit::new(opts).unwrap();
-        insta::assert_debug_snapshot!(get_detectors()
-            .iter()
-            .flat_map(|d| d.run(&core))
-            .collect::<Vec<Result>>());
-    });
-}

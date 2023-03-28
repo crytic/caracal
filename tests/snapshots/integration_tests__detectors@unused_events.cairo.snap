@@ -1,5 +1,5 @@
 ---
-source: src/core/core_unit.rs
+source: tests/integration_tests.rs
 expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
 ---
 [
