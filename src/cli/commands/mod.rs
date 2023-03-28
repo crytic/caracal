@@ -35,15 +35,3 @@ impl Cmd for Commands {
         }
     }
 }
-
-/* impl From<Args> for CoreOpts {
-    fn from(args: Args) -> Self {
-        CoreOpts {
-            file: args.file,
-            filter: args.filter,
-            print: args.print,
-            corelib: args.corelib,
-        }
-    }
-}
- */
