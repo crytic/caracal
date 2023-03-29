@@ -35,8 +35,8 @@ impl Detector for UnusedEvents {
             .collect();
 
         for f in compilation_unit.functions_user_defined() {
-            for lib_call in f.events_emitted() {
-                if let SierraStatement::Invocation(invoc) = lib_call {
+            for event_stmt in f.events_emitted() {
+                if let SierraStatement::Invocation(invoc) = event_stmt {
                     // Get the concrete libfunc called
                     let libfunc = compilation_unit
                         .registry()

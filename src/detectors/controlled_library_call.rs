@@ -34,8 +34,8 @@ impl Detector for ControlledLibraryCall {
 
         for f in compilation_unit.functions_user_defined() {
             // Check for library call made with the "interface" a trait with the ABI attribute
-            for lib_call in f.library_functions_calls() {
-                if let SierraStatement::Invocation(invoc) = lib_call {
+            for lib_call_stmt in f.library_functions_calls() {
+                if let SierraStatement::Invocation(invoc) = lib_call_stmt {
                     // Get the concrete libfunc called
                     let libfunc = compilation_unit
                         .registry()
@@ -50,15 +50,15 @@ impl Detector for ControlledLibraryCall {
                             invoc.args.clone(),
                             compilation_unit,
                             &f.name(),
-                            lib_call,
+                            lib_call_stmt,
                         );
                     }
                 }
             }
 
             // Check for library call made with the syscall
-            for s in f.get_statements().iter() {
-                if let SierraStatement::Invocation(invoc) = s {
+            for stmt in f.get_statements().iter() {
+                if let SierraStatement::Invocation(invoc) = stmt {
                     // Get the concrete libfunc called
                     let libfunc = compilation_unit
                         .registry()
@@ -69,14 +69,13 @@ impl Detector for ControlledLibraryCall {
                     if let CoreConcreteLibfunc::StarkNet(StarkNetConcreteLibfunc::LibraryCall(l)) =
                         libfunc
                     {
-                        println!("in syscall checking...");
                         self.check_user_controlled(
                             &mut results,
                             &l.signature.param_signatures,
                             invoc.args.clone(),
                             compilation_unit,
                             &f.name(),
-                            s,
+                            stmt,
                         );
                     }
                 }

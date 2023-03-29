@@ -32,8 +32,8 @@ impl Detector for UnusedArguments {
             // Calculate the offset to subtract from the paramter id. Builtins arguments are always before the user defined.
             let offset = f.params_all().count() - f.params().count();
 
-            for lib_call in f.get_statements() {
-                if let SierraStatement::Invocation(invoc) = lib_call {
+            for stmt in f.get_statements() {
+                if let SierraStatement::Invocation(invoc) = stmt {
                     // Get the concrete libfunc called
                     let libfunc = compilation_unit
                         .registry()

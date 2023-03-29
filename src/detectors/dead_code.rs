@@ -35,8 +35,8 @@ impl Detector for DeadCode {
             .collect();
 
         for f in compilation_unit.functions_user_defined() {
-            for lib_call in f.private_functions_calls() {
-                if let SierraStatement::Invocation(invoc) = lib_call {
+            for private_call_stmt in f.private_functions_calls() {
+                if let SierraStatement::Invocation(invoc) = private_call_stmt {
                     // Get the concrete libfunc called
                     let libfunc = compilation_unit
                         .registry()
