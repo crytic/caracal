@@ -15,7 +15,7 @@ mod TestContract {
     }
 
     #[external]
-    fn bad2(a: u128, class_hash: ClassHash) -> u128 {
+    fn bad2(class_hash: ClassHash) -> u128 {
         internal_lib_call(class_hash)
     }
 
