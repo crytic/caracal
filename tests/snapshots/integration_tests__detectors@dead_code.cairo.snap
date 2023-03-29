@@ -1,0 +1,12 @@
+---
+source: tests/integration_tests.rs
+expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
+---
+[
+    Result {
+        name: "dead-code",
+        impact: Low,
+        confidence: High,
+        message: "Function add_2 defined in dead_code::dead_code::DeadCode is never used",
+    },
+]
