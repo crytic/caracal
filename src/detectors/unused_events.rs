@@ -34,12 +34,11 @@ impl Detector for UnusedEvents {
             .map(|f| f.name())
             .collect();
 
-        for f in core.get_compilation_unit().functions_user_defined() {
+        for f in compilation_unit.functions_user_defined() {
             for lib_call in f.events_emitted() {
                 if let SierraStatement::Invocation(invoc) = lib_call {
                     // Get the concrete libfunc called
-                    let libfunc = core
-                        .get_compilation_unit()
+                    let libfunc = compilation_unit
                         .registry()
                         .get_libfunc(&invoc.libfunc_id)
                         .expect("Library function not found in the registry");

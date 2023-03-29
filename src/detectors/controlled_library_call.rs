@@ -30,14 +30,14 @@ impl Detector for ControlledLibraryCall {
 
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
         let mut results = Vec::new();
+        let compilation_unit = core.get_compilation_unit();
 
-        for f in core.get_compilation_unit().functions_user_defined() {
+        for f in compilation_unit.functions_user_defined() {
             // Check for library call made with the "interface" a trait with the ABI attribute
             for lib_call in f.library_functions_calls() {
                 if let SierraStatement::Invocation(invoc) = lib_call {
                     // Get the concrete libfunc called
-                    let libfunc = core
-                        .get_compilation_unit()
+                    let libfunc = compilation_unit
                         .registry()
                         .get_libfunc(&invoc.libfunc_id)
                         .expect("Library function not found in the registry");
@@ -48,7 +48,7 @@ impl Detector for ControlledLibraryCall {
                             &mut results,
                             &abi_function.signature.param_signatures,
                             invoc.args.clone(),
-                            core.get_compilation_unit(),
+                            compilation_unit,
                             &f.name(),
                             lib_call,
                         );
@@ -60,8 +60,7 @@ impl Detector for ControlledLibraryCall {
             for s in f.get_statements().iter() {
                 if let SierraStatement::Invocation(invoc) = s {
                     // Get the concrete libfunc called
-                    let libfunc = core
-                        .get_compilation_unit()
+                    let libfunc = compilation_unit
                         .registry()
                         .get_libfunc(&invoc.libfunc_id)
                         .expect("Library function not found in the registry");
@@ -75,7 +74,7 @@ impl Detector for ControlledLibraryCall {
                             &mut results,
                             &l.signature.param_signatures,
                             invoc.args.clone(),
-                            core.get_compilation_unit(),
+                            compilation_unit,
                             &f.name(),
                             s,
                         );
