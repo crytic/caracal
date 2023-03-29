@@ -25,3 +25,17 @@ pub fn filter_builtins_from_arguments(
         .map(|(_, arg_elem)| arg_elem)
         .collect()
 }
+
+/// Get a number as input and return the ordinal representation
+pub fn number_to_ordinal(n: u64) -> String {
+    let s = n.to_string();
+    if s.ends_with('1') && !s.ends_with("11") {
+        format!("{}{}", n, "st")
+    } else if s.ends_with('2') && !s.ends_with("12") {
+        format!("{}{}", n, "nd")
+    } else if s.ends_with('3') && !s.ends_with("13") {
+        format!("{}{}", n, "rd")
+    } else {
+        format!("{}{}", n, "th")
+    }
+}
