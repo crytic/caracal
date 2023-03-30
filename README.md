@@ -44,6 +44,7 @@ Num | Detector | What it Detects | Impact | Confidence
 ## How to write a detector
 Add a test in [tests/detectors/](tests/detectors/) with the name of your detector and an example of what it should detect.  
 Create your new detector in [detectors/](src/detectors/).  
+Add your detector in [get_detectors](src/detectors/mod.rs).  
 It needs to be a struct which implements the [Detector](src/detectors/detector.rs) trait. `name`/`description`/`impact`/`confidence` functions are self explaining.  
 In the `run` function you will get a reference to the [CoreUnit](src/core/core_unit.rs) object, as of now you only need to get the compilation unit from it and then it's likely you need to decide to iterate over all the functions or only user defined (see [CompilationUnit](src/core/compilation_unit.rs)).  
 Depending on the what your detector needs to do you can use metadata from the [Function](src/core/function.rs) object such as the events the current function emits, or iterate over the SIERRA statements.  
@@ -54,4 +55,11 @@ See the proposed output and if it matches what you expect accept it otherwise go
 Lastly run `cargo fmt`.
 
 ## How to write a printer
-Read [how to write a detector](#how-to-write-a-detector). It's the same process except you create your printer in [printers/](src/printers/) and it implements the [Printer](src/printers/printer.rs) trait. Additionally in the `run` function you will get a [PrintOpts](src/printers/printer.rs) argument. At the moment printers don't have tests.
+Read [how to write a detector](#how-to-write-a-detector).  
+It's the same process except you create your printer in [printers/](src/printers/), implements the [Printer](src/printers/printer.rs) trait and add it in [get_printers](src/printers/mod.rs).  
+Additionally in the `run` function you will get a [PrintOpts](src/printers/printer.rs) argument.  
+At the moment printers don't have tests.
+
+## Limitations
+- Since it's working over the SIERRA representation it's not possible to report where an error is in the source code but we can only report SIERRA instructions/what's available in a SIERRA program.
+- Works correctly only with Starknet contracts that have at least one `view` or `external` function.
