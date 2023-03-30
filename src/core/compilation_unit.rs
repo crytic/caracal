@@ -213,7 +213,6 @@ impl CompilationUnit {
                     } else {
                         // We are not in the contract module
                         // set the function to private
-                        println!("FULLANEM {full_name}");
                         f.set_ty(Type::Private);
                     }
                 }
