@@ -93,10 +93,10 @@ impl Detector for UnusedReturn {
                                         .expect("Library function not found in the registry");
 
                                     self.iterate_struct_deconstruct(
-                                        &compilation_unit,
+                                        compilation_unit,
                                         &mut results,
                                         libfunc,
-                                        &stmt_to_check,
+                                        stmt_to_check,
                                         stmt,
                                         &f.name(),
                                     );
@@ -113,10 +113,10 @@ impl Detector for UnusedReturn {
                                         .expect("Library function not found in the registry");
 
                                     self.iterate_struct_deconstruct(
-                                        &compilation_unit,
+                                        compilation_unit,
                                         &mut results,
                                         libfunc,
-                                        &stmt_to_check,
+                                        stmt_to_check,
                                         stmt,
                                         &f.name(),
                                     );
@@ -154,7 +154,7 @@ impl<'a> UnusedReturn {
                 break;
             }
         }
-        
+
         // If the instruction after all the struct_deconstruct is a drop report unused return value
         if let CoreConcreteLibfunc::Drop(drop_libfunc) = libfunc {
             let ty_dropped = compilation_unit
