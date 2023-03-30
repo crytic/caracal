@@ -1,0 +1,30 @@
+---
+source: tests/integration_tests.rs
+expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
+---
+[
+    Result {
+        name: "unused-return",
+        impact: Medium,
+        confidence: Medium,
+        message: "Return value unused for the function call function_call<user@unused_result::unused_result::UnusedResult::add_1>([6], [7], [8]) -> ([3], [4], [5]) in unused_result::unused_result::UnusedResult::unused_result_1",
+    },
+    Result {
+        name: "unused-return",
+        impact: Medium,
+        confidence: Medium,
+        message: "Return value unused for the function call function_call<user@unused_result::unused_result::UnusedResult::add_2>([2]) -> ([1]) in unused_result::unused_result::UnusedResult::unused_result_2",
+    },
+    Result {
+        name: "unused-return",
+        impact: Medium,
+        confidence: Medium,
+        message: "Return value unused for the function call function_call<user@unused_result::unused_result::UnusedResult::add_3>([2]) -> ([1]) in unused_result::unused_result::UnusedResult::unused_result_3",
+    },
+    Result {
+        name: "unused-return",
+        impact: Medium,
+        confidence: Medium,
+        message: "Return value unused for the function call function_call<user@unused_result::unused_result::UnusedResult::add_4>([2]) -> ([1]) in unused_result::unused_result::UnusedResult::unused_result_4",
+    },
+]

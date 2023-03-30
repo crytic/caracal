@@ -5,6 +5,7 @@ pub mod dead_code;
 pub mod detector;
 pub mod unused_arguments;
 pub mod unused_events;
+pub mod unused_return;
 
 pub fn get_detectors() -> Vec<Box<dyn Detector>> {
     vec![
@@ -12,5 +13,6 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<unused_events::UnusedEvents>::default(),
         Box::<dead_code::DeadCode>::default(),
         Box::<unused_arguments::UnusedArguments>::default(),
+        Box::<unused_return::UnusedReturn>::default(),
     ]
 }
