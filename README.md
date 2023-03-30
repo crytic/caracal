@@ -38,18 +38,20 @@ Num | Detector | What it Detects | Impact | Confidence
 5 | `unused-return` | Unused return values | Medium | Medium
 
 ## Printers
-- cfg: Export the CFG of each function in a .dot file
-- cfg-optimized: Export the CFG optimized of each function in a .dot file. Note now it's the same as cfg because the SIERRA representation doesn't have the pattern that was optimized anymore.  
+- `cfg`: Export the CFG of each function in a .dot file
+- `cfg-optimized`: Export the CFG optimized of each function in a .dot file. Note now it's the same as cfg because the SIERRA representation doesn't have the pattern that was optimized anymore.  
 
 ## How to write a detector
 Add a test in [tests/detectors/](tests/detectors/) with the name of your detector and an example of what it should detect.  
 Create your new detector in [detectors/](src/detectors/).  
 It needs to be a struct which implements the [Detector](src/detectors/detector.rs) trait. `name`/`description`/`impact`/`confidence` functions are self explaining.  
 In the `run` function you will get a reference to the [CoreUnit](src/core/core_unit.rs) object, as of now you only need to get the compilation unit from it and then it's likely you need to decide to iterate over all the functions or only user defined (see [CompilationUnit](src/core/compilation_unit.rs)).  
-Now depending on the what your detector needs to do you can use metadata from the [Function](src/core/function.rs) object such as the events the current function emits, or you need to iterate over the SIERRA statements.
-You must return a `Vec<Result>` so when you find something that should be reported add a [Result](src/detectors/detector.rs) element in your array that at the end you will return. 
+Depending on the what your detector needs to do you can use metadata from the [Function](src/core/function.rs) object such as the events the current function emits, or iterate over the SIERRA statements.  
+You must return a `Vec<Result>` so when you find something that should be reported add a [Result](src/detectors/detector.rs) element in your array that at the end you will return.  
 Now that your detector is ready run `cargo test`, it will fail. We do snapshot testing for the detectors using the [insta](https://docs.rs/insta/latest/insta/) crate.  
-To make `cargo test` not fail run `cargo insta review` (if you don't have it installed do `cargo install cargo-insta`). See the proposed output and if it matches what you expect accept it otherwise go back to your detector and improve it.
+To make `cargo test` not fail run `cargo insta review` (if you don't have it installed do `cargo install cargo-insta`).  
+See the proposed output and if it matches what you expect accept it otherwise go back to your detector and improve it.  
+Lastly run `cargo fmt`.
 
 ## How to write a printer
 Read [how to write a detector](#how-to-write-a-detector). It's the same process except you create your printer in [printers/](src/printers/) and it implements the [Printer](src/printers/printer.rs) trait. Additionally in the `run` function you will get a [PrintOpts](src/printers/printer.rs) argument. At the moment printers don't have tests.
