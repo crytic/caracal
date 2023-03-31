@@ -22,7 +22,7 @@ List printers:
 ```bash
 cargo run --release --bin starknet-static-analysis printers
 ```
-Run detectors:
+Run printers:
 ```bash
 cargo run --release --bin starknet-static-analysis print path/file/to/analyze --what printer_to_use --corelib path/to/corelib/src
 ```
