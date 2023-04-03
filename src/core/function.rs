@@ -32,6 +32,8 @@ pub enum Type {
     AbiCallContract,
     /// Function of a trait with the ABI attribute that does a library call
     AbiLibraryCall,
+    /// L1 handler function
+    L1Handler,
 }
 
 #[derive(Clone)]

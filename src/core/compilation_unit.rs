@@ -48,12 +48,12 @@ impl CompilationUnit {
     }
 
     /// Returns the functions that are defined by the user
-    /// Constructor - External - View - Private
+    /// Constructor - External - View - Private - L1Handler
     pub fn functions_user_defined(&self) -> impl Iterator<Item = &Function> {
         self.functions.iter().filter(|f| {
             matches!(
                 f.ty(),
-                Type::Constructor | Type::External | Type::View | Type::Private
+                Type::Constructor | Type::External | Type::View | Type::Private | Type::L1Handler
             )
         })
     }
@@ -66,7 +66,11 @@ impl CompilationUnit {
     pub fn is_tainted(&self, function_name: String, variable: VarId) -> bool {
         let wrapped_variable = WrapperVariable::new(function_name, variable);
         let mut parameters = HashSet::new();
-        for external_function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
+        for external_function in self
+            .functions
+            .iter()
+            .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler))
+        {
             for param in external_function.params() {
                 parameters.insert(WrapperVariable::new(
                     external_function.name(),
@@ -110,14 +114,17 @@ impl CompilationUnit {
                     .to_string();
             let mut external_functions = HashSet::new();
             let mut constructor = String::new();
+            let mut l1_handler_functions = HashSet::new();
 
-            // Gather all the external functions and the constructor
+            // Gather all the external/l1_handler functions and the constructor
             for f in self.sierra_program.funcs.iter() {
                 let full_name = f.id.to_string();
                 if full_name.contains("::__external::") {
                     external_functions.insert(full_name.replace("__external::", ""));
-                } else if full_name.contains("__constructor") {
+                } else if full_name.contains("::__constructor::") {
                     constructor = full_name.replace("__constructor::", "");
+                } else if full_name.contains("::__l1_handler::") {
+                    l1_handler_functions.insert(full_name.replace("__l1_handler::", ""));
                 }
             }
 
@@ -129,6 +136,7 @@ impl CompilationUnit {
                     f.set_ty(Type::Core);
                 } else if full_name.contains("::__external::")
                     || full_name.contains("::__constructor::")
+                    || full_name.contains("::__l1_handler::")
                 {
                     f.set_ty(Type::Wrapper);
                 } else if full_name == constructor {
@@ -154,6 +162,8 @@ impl CompilationUnit {
                             }
                         }
                     }
+                } else if l1_handler_functions.contains(&full_name) {
+                    f.set_ty(Type::L1Handler);
                 } else if full_name.ends_with("::address")
                     || full_name.ends_with("::read")
                     || full_name.ends_with("::write")
@@ -290,11 +300,15 @@ impl CompilationUnit {
         self.propagate_taints();
     }
 
-    /// Propagate the taints from external functions to private functions
+    /// Propagate the taints from external/l1_handler functions to private functions
     fn propagate_taints(&mut self) {
-        // Collect the arguments of all the external functions
+        // Collect the arguments of all the external/l1_handler functions
         let mut arguments_external_functions: HashSet<WrapperVariable> = HashSet::new();
-        for function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
+        for function in self
+            .functions
+            .iter()
+            .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler))
+        {
             for param in function.params() {
                 arguments_external_functions
                     .insert(WrapperVariable::new(function.name(), param.id.clone()));
@@ -302,13 +316,13 @@ impl CompilationUnit {
         }
 
         let mut changed = true;
-        // Iterate external and private functions and propagate the taints to each private function they call
+        // Iterate external, l1_handler, private functions and propagate the taints to each private function they call
         // until a fixpoint when no new informations were propagated
         while changed {
             for calling_function in self
                 .functions
                 .iter()
-                .filter(|f| *f.ty() == Type::External || *f.ty() == Type::Private)
+                .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler | Type::Private))
             {
                 changed = false;
                 for function_call in calling_function.private_functions_calls() {
