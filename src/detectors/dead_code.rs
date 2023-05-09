@@ -5,6 +5,8 @@ use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::program::Statement as SierraStatement;
 use std::collections::HashSet;
 
+// Note: Inlined functions are reported as dead code
+
 #[derive(Default)]
 pub struct DeadCode {}
 
@@ -18,7 +20,7 @@ impl Detector for DeadCode {
     }
 
     fn confidence(&self) -> Confidence {
-        Confidence::High
+        Confidence::Medium
     }
 
     fn impact(&self) -> Impact {
@@ -34,7 +36,9 @@ impl Detector for DeadCode {
             .map(|f| f.name())
             .collect();
 
-        for f in compilation_unit.functions_user_defined() {
+        // We must iterate over all functions because some user implemented functions
+        // such as when implementing Serde/StorageAccess trait are called by non user-defined functions
+        for f in compilation_unit.functions() {
             for private_call_stmt in f.private_functions_calls() {
                 if let SierraStatement::Invocation(invoc) = private_call_stmt {
                     // Get the concrete libfunc called

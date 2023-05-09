@@ -33,7 +33,7 @@ Num | Detector | What it Detects | Impact | Confidence
 --- | --- | --- | --- | ---
 1 | `controlled-library-call` | Library calls with a user controlled class hash | High | Medium
 2 | `unused-events` | Events defined but not emitted | Medium | Medium
-3 | `dead-code` | Private functions never used | Low | High
+3 | `dead-code` | Private functions never used | Low | Medium
 4 | `unused-arguments` | Unused arguments | Low | High
 5 | `unused-return` | Unused return values | Medium | Medium
 
