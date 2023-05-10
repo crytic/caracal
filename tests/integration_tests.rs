@@ -9,7 +9,7 @@ fn test_detectors() {
         let opts = CoreOpts {
             file: path.to_path_buf(),
             corelib: Some(PathBuf::from(
-                env::var("CARGO_MANIFEST_DIR").unwrap() + "/src/corelib/src",
+                env::var("CARGO_MANIFEST_DIR").unwrap() + "/corelib/src",
             )),
         };
         let core = CoreUnit::new(opts).unwrap();

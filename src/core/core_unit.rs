@@ -2,7 +2,9 @@ use anyhow::{bail, Context, Result};
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
+use std::sync::Arc;
 
+use crate::core::compilation_unit::CompilationUnit;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, ProjectConfig, ProjectConfigContent};
 use cairo_lang_compiler::CompilerConfig;
@@ -13,9 +15,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::abi::AbiBuilder;
 use cairo_lang_starknet::contract::{find_contracts, get_abi};
-use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
-
-use crate::core::compilation_unit::CompilationUnit;
+use cairo_lang_starknet::plugin::StarkNetPlugin;
 
 pub struct CoreOpts {
     pub file: PathBuf,
@@ -50,13 +50,13 @@ impl CoreUnit {
 
         let mut db = RootDatabase::builder()
             .with_project_config(project_config)
-            .with_starknet()
+            .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
             .build()?;
 
         let mut compiler_config = CompilerConfig::default();
 
         let main_crate_ids = setup_project(&mut db, &opts.file)?;
-        compiler_config.diagnostics_reporter.ensure(&mut db)?;
+        compiler_config.diagnostics_reporter.ensure(&db)?;
 
         let contracts = find_contracts(&db, &main_crate_ids);
         let contract = match &contracts[..] {
