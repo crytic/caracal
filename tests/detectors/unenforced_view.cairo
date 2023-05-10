@@ -1,5 +1,4 @@
 #[contract]
-
 mod UnenforcedView {
     struct Storage {
         value: felt252,
@@ -7,6 +6,10 @@ mod UnenforcedView {
 
     #[view]
     fn writes_to_storage(val: felt252) {
+        f1(val);
+    }
+
+    fn f1(val: felt252) {
         value::write(val);
     }
 
