@@ -315,16 +315,22 @@ impl CompilationUnit {
             }
         }
 
+        // There aren't external functions we don't need to propagate anything
+        if arguments_external_functions.is_empty() {
+            return;
+        }
+
         let mut changed = true;
         // Iterate external, l1_handler, private functions and propagate the taints to each private function they call
         // until a fixpoint when no new informations were propagated
         while changed {
+            changed = false;
+
             for calling_function in self
                 .functions
                 .iter()
                 .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler | Type::Private))
             {
-                changed = false;
                 for function_call in calling_function.private_functions_calls() {
                     // It will always be an invocation
                     if let GenStatement::Invocation(invoc) = function_call {
