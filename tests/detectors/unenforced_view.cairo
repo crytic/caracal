@@ -5,11 +5,21 @@ mod UnenforcedView {
     }
 
     #[view]
-    fn writes_to_storage(val: felt252) {
-        f1(val);
+    fn writes_to_storage_indirect(val: felt252) {
+       f1(val);
     }
 
     fn f1(val: felt252) {
+        f2(val);
+    }
+
+
+    fn f2(val: felt252) {
+        value::write(val);
+    }
+
+    #[view]
+    fn writes_to_storage_direct(val:felt252) {
         value::write(val);
     }
 

@@ -3,10 +3,10 @@ use self::detector::Detector;
 pub mod controlled_library_call;
 pub mod dead_code;
 pub mod detector;
+pub mod unenforced_view;
 pub mod unused_arguments;
 pub mod unused_events;
 pub mod unused_return;
-pub mod unenforced_view;
 
 pub fn get_detectors() -> Vec<Box<dyn Detector>> {
     vec![
