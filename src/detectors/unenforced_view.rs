@@ -33,9 +33,7 @@ impl Detector for UnenforcedView {
         for func in view_funcs {
             let func_name = func.name();
             let (declaration, name) = func_name.rsplit_once("::").unwrap();
-            if func.storage_vars_written().peekable().peek().is_some()
-                || func.events_emitted().peekable().peek().is_some()
-            {
+            if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
                 results.push(Result {
                     name: self.name().to_string(),
                     impact: self.impact(),
@@ -61,13 +59,12 @@ impl UnenforcedView {
         results: &mut Vec<Result>,
         subcalls: Vec<&SierraStatement>,
     ) {
-
         if subcalls.is_empty() {
             return;
         }
 
         for call in subcalls {
-            //do lookup
+            // do lookup
             if let SierraStatement::Invocation(invoc) = call {
                 let libfunc = compilation_unit
                     .registry()
@@ -85,9 +82,9 @@ impl UnenforcedView {
                         .functions_user_defined()
                         .find(|f| &f.name() == func_name)
                         .unwrap();
-                    //if lookup writes to storage push result using original view function + declaration
-                    if called_fn.storage_vars_written().peekable().peek().is_some()
-                        || called_fn.events_emitted().peekable().peek().is_some()
+                    // if lookup writes to storage push result using original view function + declaration
+                    if called_fn.storage_vars_written().count() > 0
+                        || called_fn.events_emitted().count() > 0
                     {
                         results.push(Result {
                             name: self.name().to_string(),
@@ -99,7 +96,7 @@ impl UnenforcedView {
                             ),
                         });
                     }
-                    //for now we just check over the private calls, even though the compiler doesn't validate that an external call can be called from within the contract
+                    // for now we just check over the private calls, even though the compiler doesn't validate that an external call can be called from within the contract
                     let subcalls_to_check = called_fn.private_functions_calls().collect();
                     self.check_view_subcalls(
                         compilation_unit,
