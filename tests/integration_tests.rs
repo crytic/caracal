@@ -7,7 +7,7 @@ use std::path::PathBuf;
 fn test_detectors() {
     insta::glob!("detectors/", "*.cairo", |path| {
         let opts = CoreOpts {
-            file: path.to_path_buf(),
+            target: path.to_path_buf(),
             corelib: Some(PathBuf::from(
                 env::var("CARGO_MANIFEST_DIR").unwrap() + "/corelib/src",
             )),

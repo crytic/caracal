@@ -19,8 +19,8 @@ pub struct CompilationUnit {
     sierra_program: Program,
     /// Functions of the program
     functions: Vec<Function>,
-    /// Abi of the compiled starknet contract
-    abi: Contract,
+    /// Abi of the compiled starknet contracts
+    abis: Vec<Contract>,
     /// Helper registry to get the concrete type from an id
     registry: ProgramRegistry<CoreType, CoreLibfunc>,
     /// Function name to taints
@@ -30,13 +30,13 @@ pub struct CompilationUnit {
 impl CompilationUnit {
     pub fn new(
         sierra_program: Program,
-        abi: Contract,
+        abis: Vec<Contract>,
         registry: ProgramRegistry<CoreType, CoreLibfunc>,
     ) -> Self {
         CompilationUnit {
             sierra_program,
             functions: Vec::new(),
-            abi,
+            abis,
             registry,
             taint: HashMap::new(),
         }
@@ -99,30 +99,33 @@ impl CompilationUnit {
     }
 
     fn set_functions_type(&mut self) {
-        // Get a wrapper function and then get the base module from it
-        let wrapper_function = self
+        // Get the possible base modules
+        let base_modules: HashSet<String> = self
             .sierra_program
             .funcs
             .iter()
-            .find(|f| f.id.to_string().contains("__external::"));
-        if let Some(f) = wrapper_function {
-            let base_module =
+            .filter(|f| f.id.to_string().contains("__external::"))
+            .map(|f| {
                 f.id.to_string()
                     .split_once("__external::")
                     .unwrap()
                     .0
-                    .to_string();
+                    .to_owned()
+            })
+            .collect();
+
+        if !base_modules.is_empty() {
             let mut external_functions = HashSet::new();
-            let mut constructor = String::new();
+            let mut constructors = HashSet::new();
             let mut l1_handler_functions = HashSet::new();
 
-            // Gather all the external/l1_handler functions and the constructor
+            // Gather all the external/l1_handler functions and the constructor of each contract
             for f in self.sierra_program.funcs.iter() {
                 let full_name = f.id.to_string();
                 if full_name.contains("::__external::") {
                     external_functions.insert(full_name.replace("__external::", ""));
                 } else if full_name.contains("::__constructor::") {
-                    constructor = full_name.replace("__constructor::", "");
+                    constructors.insert(full_name.replace("__constructor::", ""));
                 } else if full_name.contains("::__l1_handler::") {
                     l1_handler_functions.insert(full_name.replace("__l1_handler::", ""));
                 }
@@ -139,24 +142,26 @@ impl CompilationUnit {
                     || full_name.contains("::__l1_handler::")
                 {
                     f.set_ty(Type::Wrapper);
-                } else if full_name == constructor {
+                } else if constructors.contains(&full_name) {
                     // Constructor
                     f.set_ty(Type::Constructor);
                 } else if external_functions.contains(&full_name) {
                     // External function, we need to check in the abi if it's view or external
                     let function_name = full_name.rsplit_once("::").unwrap().1;
 
-                    for item in self.abi.items.iter() {
-                        if let AbiFunction(function) = item {
-                            if function.name == function_name {
-                                match function.state_mutability {
-                                    cairo_lang_starknet::abi::StateMutability::External => {
-                                        f.set_ty(Type::External);
-                                        break;
-                                    }
-                                    cairo_lang_starknet::abi::StateMutability::View => {
-                                        f.set_ty(Type::View);
-                                        break;
+                    for abi in self.abis.iter() {
+                        for item in abi.items.iter() {
+                            if let AbiFunction(function) = item {
+                                if function.name == function_name {
+                                    match function.state_mutability {
+                                        cairo_lang_starknet::abi::StateMutability::External => {
+                                            f.set_ty(Type::External);
+                                            break;
+                                        }
+                                        cairo_lang_starknet::abi::StateMutability::View => {
+                                            f.set_ty(Type::View);
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -170,11 +175,28 @@ impl CompilationUnit {
                 {
                     // We split by the base_module if it's not Some then we are not in the contract module
                     // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::read
-                    let second_part = full_name.split_once(&base_module);
+                    // Get the possible bases for the current function
+                    let mut current_bases: Vec<&String> = base_modules
+                        .iter()
+                        .filter(|base| full_name.split_once(*base).is_some())
+                        .collect();
 
-                    if let Some(second_part) = second_part {
+                    if !current_bases.is_empty() {
+                        // Need this in case there are submodules with the same function name
+                        // a::b::f
+                        // a::b::c::f
+                        // Both would be in current_bases however the correct is a::b::c
+                        // the one which is more specific
+                        current_bases.sort_by(|b1, b2| {
+                            b1.matches("::").count().cmp(&b2.matches("::").count())
+                        });
                         // For a storage variable function we would get ["name", "read"]
-                        let second_part = second_part.1.split("::").collect::<Vec<&str>>();
+                        let second_part = full_name
+                            .split_once(current_bases[0])
+                            .unwrap()
+                            .1
+                            .split("::")
+                            .collect::<Vec<&str>>();
                         // We assume it's a function for a storage variable
                         // however if there is an immediate submodule with a read/write/address function
                         // it will be incorrectly set as Storage
@@ -196,9 +218,22 @@ impl CompilationUnit {
                     f.set_ty(Type::AbiCallContract)
                 } else {
                     // Event or private function
-                    let second_part = full_name.split_once(&base_module);
-                    if let Some(second_part) = second_part {
-                        let second_part = second_part.1;
+                    // Get the possible bases for the current function
+                    let mut current_bases: Vec<&String> = base_modules
+                        .iter()
+                        .filter(|base| full_name.split_once(*base).is_some())
+                        .collect();
+                    if !current_bases.is_empty() {
+                        // Need this in case there are submodules with the same function name
+                        // a::b::f
+                        // a::b::c::f
+                        // Both would be in current_bases however the correct is a::b::c
+                        // the one which is more specific
+                        current_bases.sort_by(|b1, b2| {
+                            b1.matches("::").count().cmp(&b2.matches("::").count())
+                        });
+
+                        let second_part = full_name.split_once(current_bases[0]).unwrap().1;
                         // If it contains :: it means it's a function in a submodule so it should be private
                         if second_part.contains("::") {
                             f.set_ty(Type::Private);
@@ -207,15 +242,18 @@ impl CompilationUnit {
                             let possible_event_name = full_name.rsplit_once("::").unwrap().1;
 
                             let mut found = false;
-                            for item in self.abi.items.iter() {
-                                if let Event(e) = item {
-                                    if e.name == possible_event_name {
-                                        f.set_ty(Type::Event);
-                                        found = true;
-                                        break;
+                            for abi in self.abis.iter() {
+                                for item in abi.items.iter() {
+                                    if let Event(e) = item {
+                                        if e.name == possible_event_name {
+                                            f.set_ty(Type::Event);
+                                            found = true;
+                                            break;
+                                        }
                                     }
                                 }
                             }
+
                             if !found {
                                 f.set_ty(Type::Private);
                             }

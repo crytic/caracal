@@ -13,12 +13,12 @@ use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_starknet::abi::AbiBuilder;
+use cairo_lang_starknet::abi::{AbiBuilder, Contract};
 use cairo_lang_starknet::contract::{find_contracts, get_abi};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 
 pub struct CoreOpts {
-    pub file: PathBuf,
+    pub target: PathBuf,
     pub corelib: Option<PathBuf>,
 }
 
@@ -55,27 +55,29 @@ impl CoreUnit {
 
         let mut compiler_config = CompilerConfig::default();
 
-        let main_crate_ids = setup_project(&mut db, &opts.file)?;
+        let main_crate_ids = setup_project(&mut db, &opts.target)?;
         compiler_config.diagnostics_reporter.ensure(&db)?;
 
         let contracts = find_contracts(&db, &main_crate_ids);
-        let contract = match &contracts[..] {
-            [contract] => contract,
-            [] => bail!("Contract not found."),
-            _ => {
-                bail!("Compilation unit must include only one contract.",)
-            }
-        };
+        if contracts.is_empty() {
+            bail!("Contract not found.");
+        }
 
-        let abi =
-            AbiBuilder::from_trait(&db, get_abi(&db, contract)?).with_context(|| "ABI error")?;
+        let mut abis: Vec<Contract> = vec![];
+        contracts.iter().for_each(|c| {
+            abis.push(
+                AbiBuilder::from_trait(&db, get_abi(&db, c).expect("Error when getting the ABI."))
+                    .unwrap(),
+            )
+        });
+
         let sierra = db
             .get_sierra_program(main_crate_ids)
             .ok()
             .context("Compilation failed without any diagnostics.")?;
         let sierra = replace_sierra_ids_in_program(&db, &sierra);
         let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra)?;
-        let mut compilation_unit = CompilationUnit::new(sierra, abi, registry);
+        let mut compilation_unit = CompilationUnit::new(sierra, abis, registry);
         compilation_unit.analyze();
 
         Ok(CoreUnit { compilation_unit })

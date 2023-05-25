@@ -6,9 +6,9 @@ use std::path::PathBuf;
 
 #[derive(Args, Debug)]
 pub struct PrintArgs {
-    /// File to analyze
+    /// Target to analyze
     #[arg(value_hint = ValueHint::FilePath)]
-    file: PathBuf,
+    target: PathBuf,
 
     /// Corelib path (e.g. mypath/corelib/src)
     #[arg(long)]
@@ -26,7 +26,7 @@ pub struct PrintArgs {
 impl From<&PrintArgs> for CoreOpts {
     fn from(args: &PrintArgs) -> Self {
         CoreOpts {
-            file: args.file.clone(),
+            target: args.target.clone(),
             corelib: args.corelib.clone(),
         }
     }
