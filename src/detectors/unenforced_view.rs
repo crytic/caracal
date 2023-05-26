@@ -23,29 +23,37 @@ impl Detector for UnenforcedView {
     }
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
         let mut results = Vec::new();
-        let compilation_unit = core.get_compilation_unit();
+        let compilation_units = core.get_compilation_units();
 
-        let view_funcs: Vec<_> = compilation_unit
-            .functions()
-            .filter(|f| *f.ty() == Type::View)
-            .collect();
+        for compilation_unit in compilation_units {
+            let view_funcs: Vec<_> = compilation_unit
+                .functions()
+                .filter(|f| *f.ty() == Type::View)
+                .collect();
 
-        for func in view_funcs {
-            let func_name = func.name();
-            let (declaration, name) = func_name.rsplit_once("::").unwrap();
-            if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
-                results.push(Result {
-                    name: self.name().to_string(),
-                    impact: self.impact(),
-                    confidence: self.confidence(),
-                    message: format!(
-                        "{} defined in {} is declared as view but changes state",
-                        name, declaration
-                    ),
-                });
+            for func in view_funcs {
+                let func_name = func.name();
+                let (declaration, name) = func_name.rsplit_once("::").unwrap();
+                if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
+                    results.push(Result {
+                        name: self.name().to_string(),
+                        impact: self.impact(),
+                        confidence: self.confidence(),
+                        message: format!(
+                            "{} defined in {} is declared as view but changes state",
+                            name, declaration
+                        ),
+                    });
+                }
+                let subcalls = func.private_functions_calls().collect();
+                self.check_view_subcalls(
+                    compilation_unit,
+                    declaration,
+                    name,
+                    &mut results,
+                    subcalls,
+                )
             }
-            let subcalls = func.private_functions_calls().collect();
-            self.check_view_subcalls(compilation_unit, declaration, name, &mut results, subcalls)
         }
         results
     }

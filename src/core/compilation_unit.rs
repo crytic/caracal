@@ -20,7 +20,7 @@ pub struct CompilationUnit {
     /// Functions of the program
     functions: Vec<Function>,
     /// Abi of the compiled starknet contracts
-    abis: Vec<Contract>,
+    abi: Contract,
     /// Helper registry to get the concrete type from an id
     registry: ProgramRegistry<CoreType, CoreLibfunc>,
     /// Function name to taints
@@ -30,13 +30,13 @@ pub struct CompilationUnit {
 impl CompilationUnit {
     pub fn new(
         sierra_program: Program,
-        abis: Vec<Contract>,
+        abi: Contract,
         registry: ProgramRegistry<CoreType, CoreLibfunc>,
     ) -> Self {
         CompilationUnit {
             sierra_program,
             functions: Vec::new(),
-            abis,
+            abi,
             registry,
             taint: HashMap::new(),
         }
@@ -149,19 +149,17 @@ impl CompilationUnit {
                     // External function, we need to check in the abi if it's view or external
                     let function_name = full_name.rsplit_once("::").unwrap().1;
 
-                    for abi in self.abis.iter() {
-                        for item in abi.items.iter() {
-                            if let AbiFunction(function) = item {
-                                if function.name == function_name {
-                                    match function.state_mutability {
-                                        cairo_lang_starknet::abi::StateMutability::External => {
-                                            f.set_ty(Type::External);
-                                            break;
-                                        }
-                                        cairo_lang_starknet::abi::StateMutability::View => {
-                                            f.set_ty(Type::View);
-                                            break;
-                                        }
+                    for item in self.abi.items.iter() {
+                        if let AbiFunction(function) = item {
+                            if function.name == function_name {
+                                match function.state_mutability {
+                                    cairo_lang_starknet::abi::StateMutability::External => {
+                                        f.set_ty(Type::External);
+                                        break;
+                                    }
+                                    cairo_lang_starknet::abi::StateMutability::View => {
+                                        f.set_ty(Type::View);
+                                        break;
                                     }
                                 }
                             }
@@ -242,14 +240,12 @@ impl CompilationUnit {
                             let possible_event_name = full_name.rsplit_once("::").unwrap().1;
 
                             let mut found = false;
-                            for abi in self.abis.iter() {
-                                for item in abi.items.iter() {
-                                    if let Event(e) = item {
-                                        if e.name == possible_event_name {
-                                            f.set_ty(Type::Event);
-                                            found = true;
-                                            break;
-                                        }
+                            for item in self.abi.items.iter() {
+                                if let Event(e) = item {
+                                    if e.name == possible_event_name {
+                                        f.set_ty(Type::Event);
+                                        found = true;
+                                        break;
                                     }
                                 }
                             }

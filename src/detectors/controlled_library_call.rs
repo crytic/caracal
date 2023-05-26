@@ -30,53 +30,56 @@ impl Detector for ControlledLibraryCall {
 
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
         let mut results = Vec::new();
-        let compilation_unit = core.get_compilation_unit();
+        let compilation_units = core.get_compilation_units();
 
-        for f in compilation_unit.functions_user_defined() {
-            // Check for library call made with the "interface" a trait with the ABI attribute
-            for lib_call_stmt in f.library_functions_calls() {
-                if let SierraStatement::Invocation(invoc) = lib_call_stmt {
-                    // Get the concrete libfunc called
-                    let libfunc = compilation_unit
-                        .registry()
-                        .get_libfunc(&invoc.libfunc_id)
-                        .expect("Library function not found in the registry");
+        for compilation_unit in compilation_units {
+            for f in compilation_unit.functions_user_defined() {
+                // Check for library call made with the "interface" a trait with the ABI attribute
+                for lib_call_stmt in f.library_functions_calls() {
+                    if let SierraStatement::Invocation(invoc) = lib_call_stmt {
+                        // Get the concrete libfunc called
+                        let libfunc = compilation_unit
+                            .registry()
+                            .get_libfunc(&invoc.libfunc_id)
+                            .expect("Library function not found in the registry");
 
-                    // We need this to get the signature of the function called to filter the builtins and get the class hash argument
-                    if let CoreConcreteLibfunc::FunctionCall(abi_function) = libfunc {
-                        self.check_user_controlled(
-                            &mut results,
-                            &abi_function.signature.param_signatures,
-                            invoc.args.clone(),
-                            compilation_unit,
-                            &f.name(),
-                            lib_call_stmt,
-                        );
+                        // We need this to get the signature of the function called to filter the builtins and get the class hash argument
+                        if let CoreConcreteLibfunc::FunctionCall(abi_function) = libfunc {
+                            self.check_user_controlled(
+                                &mut results,
+                                &abi_function.signature.param_signatures,
+                                invoc.args.clone(),
+                                compilation_unit,
+                                &f.name(),
+                                lib_call_stmt,
+                            );
+                        }
                     }
                 }
-            }
 
-            // Check for library call made with the syscall
-            for stmt in f.get_statements().iter() {
-                if let SierraStatement::Invocation(invoc) = stmt {
-                    // Get the concrete libfunc called
-                    let libfunc = compilation_unit
-                        .registry()
-                        .get_libfunc(&invoc.libfunc_id)
-                        .expect("Library function not found in the registry");
+                // Check for library call made with the syscall
+                for stmt in f.get_statements().iter() {
+                    if let SierraStatement::Invocation(invoc) = stmt {
+                        // Get the concrete libfunc called
+                        let libfunc = compilation_unit
+                            .registry()
+                            .get_libfunc(&invoc.libfunc_id)
+                            .expect("Library function not found in the registry");
 
-                    // We care only about a library call
-                    if let CoreConcreteLibfunc::StarkNet(StarkNetConcreteLibfunc::LibraryCall(l)) =
-                        libfunc
-                    {
-                        self.check_user_controlled(
-                            &mut results,
-                            &l.signature.param_signatures,
-                            invoc.args.clone(),
-                            compilation_unit,
-                            &f.name(),
-                            stmt,
-                        );
+                        // We care only about a library call
+                        if let CoreConcreteLibfunc::StarkNet(
+                            StarkNetConcreteLibfunc::LibraryCall(l),
+                        ) = libfunc
+                        {
+                            self.check_user_controlled(
+                                &mut results,
+                                &l.signature.param_signatures,
+                                invoc.args.clone(),
+                                compilation_unit,
+                                &f.name(),
+                                stmt,
+                            );
+                        }
                     }
                 }
             }
