@@ -24,13 +24,13 @@ impl Detector for UnenforcedView {
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
         let mut results = Vec::new();
         let compilation_unit = core.get_compilation_unit();
-        let mut tracked_fns: HashSet<String> = HashSet::new();
 
         let view_funcs: Vec<_> = compilation_unit
             .functions()
             .filter(|f| *f.ty() == Type::View)
             .collect();
         for func in view_funcs {
+            let mut tracked_fns: HashSet<String> = HashSet::new();
             let func_name = func.name();
             let (declaration, name) = func_name.rsplit_once("::").unwrap();
             if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
@@ -51,7 +51,7 @@ impl Detector for UnenforcedView {
                 name,
                 &mut results,
                 subcalls,
-                &mut tracked_fns,
+                &mut tracked_fns
             );
         }
         results
