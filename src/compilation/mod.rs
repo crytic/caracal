@@ -8,6 +8,7 @@ use crate::core::core_unit::CoreOpts;
 
 mod scarb;
 mod standard;
+mod utils;
 
 pub struct ProgramCompiled {
     pub sierra: Program,

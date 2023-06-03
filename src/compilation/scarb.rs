@@ -1,16 +1,15 @@
 use anyhow::anyhow;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use cairo_lang_sierra::debug_info::DebugInfo;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use std::fs;
 use std::path::Path;
 use std::process;
 
-use cairo_lang_starknet::contract_class::ContractClass;
-use cairo_lang_starknet::felt252_serde::sierra_from_felt252s;
-
+use crate::compilation::utils::felt252_serde::sierra_from_felt252s;
 use crate::compilation::ProgramCompiled;
 use crate::core::core_unit::CoreOpts;
+use cairo_lang_starknet::contract_class::ContractClass;
 
 pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     let output = process::Command::new("scarb")
@@ -56,7 +55,8 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
         let debug_info;
 
         if contract_class.sierra_program_debug_info.is_none() {
-            bail!(anyhow!("Sierra debug info not found. Ensure in Scarb.toml you have \n[cairo]\nsierra-replace-ids = true"));
+            println!("Skipping analysing file {}. Debug info not found. Ensure in Scarb.toml you have \n[cairo]\nsierra-replace-ids = true", sierra_file.to_str().unwrap());
+            continue;
         } else {
             debug_info = contract_class.sierra_program_debug_info.unwrap();
             if debug_info.libfunc_names.is_empty()
