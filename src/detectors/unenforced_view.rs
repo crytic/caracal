@@ -4,6 +4,7 @@ use crate::core::core_unit::CoreUnit;
 use crate::core::function::Type;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::program::Statement as SierraStatement;
+use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct UnenforcedView {}
@@ -32,6 +33,7 @@ impl Detector for UnenforcedView {
                 .collect();
 
             for func in view_funcs {
+                let mut tracked_fns: HashSet<String> = HashSet::new();
                 let func_name = func.name();
                 let (declaration, name) = func_name.rsplit_once("::").unwrap();
                 if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
@@ -52,6 +54,7 @@ impl Detector for UnenforcedView {
                     name,
                     &mut results,
                     subcalls,
+                    &mut tracked_fns,
                 )
             }
         }
@@ -66,6 +69,7 @@ impl UnenforcedView {
         name: &str,
         results: &mut Vec<Result>,
         subcalls: Vec<&SierraStatement>,
+        tracked_fns: &mut HashSet<String>,
     ) {
         if subcalls.is_empty() {
             return;
@@ -90,6 +94,10 @@ impl UnenforcedView {
                         .functions_user_defined()
                         .find(|f| &f.name() == func_name)
                         .unwrap();
+                    // if we already analyzed this function we continue
+                    if tracked_fns.contains(func_name) {
+                        continue;
+                    }
                     // if lookup writes to storage push result using original view function + declaration
                     if called_fn.storage_vars_written().count() > 0
                         || called_fn.events_emitted().count() > 0
@@ -104,6 +112,8 @@ impl UnenforcedView {
                             ),
                         });
                     }
+                    // mark this function in the case of recursive calls
+                    tracked_fns.insert(func_name.clone());
                     // for now we just check over the private calls, even though the compiler doesn't validate that an external call can be called from within the contract
                     let subcalls_to_check = called_fn.private_functions_calls().collect();
                     self.check_view_subcalls(
@@ -112,6 +122,7 @@ impl UnenforcedView {
                         name,
                         results,
                         subcalls_to_check,
+                        tracked_fns,
                     );
                 }
             }
