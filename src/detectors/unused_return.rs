@@ -1,6 +1,7 @@
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::core::compilation_unit::CompilationUnit;
 use crate::core::core_unit::CoreUnit;
+use crate::utils::filter_builtins_from_returns;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
@@ -41,7 +42,7 @@ impl Detector for UnusedReturn {
                             .get_libfunc(&invoc.libfunc_id)
                             .expect("Library function not found in the registry");
 
-                        if let CoreConcreteLibfunc::FunctionCall(_) = libfunc {
+                        if let CoreConcreteLibfunc::FunctionCall(f_called) = libfunc {
                             // Get the statements after the function call
                             // if it's a drop it means there is an unused argument
                             // if it's a struct_deconstruct we need to look at the next statement until it's different from struct_deconstruct
@@ -85,6 +86,11 @@ impl Detector for UnusedReturn {
                                     StructConcreteLibfunc::Deconstruct(_),
                                 ) = libfunc
                                 {
+                                    let return_variables = filter_builtins_from_returns(
+                                        &f_called.signature.branch_signatures[0].vars,
+                                        invoc.branches[0].results.clone(),
+                                    )
+                                    .len();
                                     // Go to the next statement and update the libfunc
                                     let stmt_to_check = &following_stmts[1..];
                                     if let SierraStatement::Invocation(invoc) = &stmt_to_check[0] {
@@ -100,12 +106,18 @@ impl Detector for UnusedReturn {
                                             stmt_to_check,
                                             stmt,
                                             &f.name(),
+                                            return_variables,
                                         );
                                     }
                                 } else if let CoreConcreteLibfunc::Enum(
                                     EnumConcreteLibfunc::Match(_),
                                 ) = libfunc
                                 {
+                                    let return_variables = filter_builtins_from_returns(
+                                        &f_called.signature.branch_signatures[0].vars,
+                                        invoc.branches[0].results.clone(),
+                                    )
+                                    .len();
                                     // Jump one statement which is a branch_align and the next one will be a struct_deconstruct
                                     let stmt_to_check = &following_stmts[2..];
                                     if let SierraStatement::Invocation(invoc) = &stmt_to_check[0] {
@@ -121,6 +133,7 @@ impl Detector for UnusedReturn {
                                             stmt_to_check,
                                             stmt,
                                             &f.name(),
+                                            return_variables,
                                         );
                                     }
                                 }
@@ -143,9 +156,17 @@ impl<'a> UnusedReturn {
         mut stmt_to_check: &[GenStatement<StatementIdx>],
         stmt: &GenStatement<StatementIdx>,
         function_name: &str,
+        return_variables: usize,
     ) {
+        let mut return_variables_counter = 0;
         while let CoreConcreteLibfunc::Struct(StructConcreteLibfunc::Deconstruct(_)) = libfunc {
             if let SierraStatement::Invocation(invoc) = &stmt_to_check[0] {
+                // If there are other struct deconstruction are not related to the returned variables
+                if return_variables_counter == return_variables {
+                    break;
+                }
+
+                return_variables_counter += 1;
                 libfunc = compilation_unit
                     .registry()
                     .get_libfunc(&invoc.libfunc_id)
