@@ -1,7 +1,4 @@
-use anyhow::anyhow;
-use anyhow::{bail, Result};
-use cairo_lang_sierra::debug_info::DebugInfo;
-use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
+use anyhow::{anyhow, bail, Result};
 use std::fs;
 use std::path::Path;
 use std::process;
@@ -9,6 +6,8 @@ use std::process;
 use crate::compilation::utils::felt252_serde::sierra_from_felt252s;
 use crate::compilation::ProgramCompiled;
 use crate::core::core_unit::CoreOpts;
+use cairo_lang_sierra::debug_info::DebugInfo;
+use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet::contract_class::ContractClass;
 
 pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
