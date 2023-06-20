@@ -26,6 +26,16 @@ mod UnusedReturn {
         f_4(amount);
     }
 
+    #[external]
+    fn unused_return_5() {
+        let a = f_5();        
+    }
+
+    #[external]
+    fn no_report() {
+        let a = value::read();
+    }
+
     fn f_1(amount: felt252) -> felt252 {
         value::write(amount);
         23
@@ -41,6 +51,11 @@ mod UnusedReturn {
 
     fn f_4(amount: felt252) -> Option::<felt252> {
         Option::Some(amount)
+    }
+
+    fn f_5() -> felt252 {
+        let a = value::read();
+        a * 2
     }
 
 }
