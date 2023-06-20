@@ -8,6 +8,7 @@ use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct UnenforcedView {}
+
 impl Detector for UnenforcedView {
     fn name(&self) -> &str {
         "unenforced-view"
@@ -23,36 +24,39 @@ impl Detector for UnenforcedView {
     }
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
         let mut results = Vec::new();
-        let compilation_unit = core.get_compilation_unit();
+        let compilation_units = core.get_compilation_units();
 
-        let view_funcs: Vec<_> = compilation_unit
-            .functions()
-            .filter(|f| *f.ty() == Type::View)
-            .collect();
-        for func in view_funcs {
-            let mut tracked_fns: HashSet<String> = HashSet::new();
-            let func_name = func.name();
-            let (declaration, name) = func_name.rsplit_once("::").unwrap();
-            if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
-                results.push(Result {
-                    name: self.name().to_string(),
-                    impact: self.impact(),
-                    confidence: self.confidence(),
-                    message: format!(
-                        "{} defined in {} is declared as view but changes state",
-                        name, declaration
-                    ),
-                });
+        for compilation_unit in compilation_units {
+            let view_funcs: Vec<_> = compilation_unit
+                .functions()
+                .filter(|f| *f.ty() == Type::View)
+                .collect();
+
+            for func in view_funcs {
+                let mut tracked_fns: HashSet<String> = HashSet::new();
+                let func_name = func.name();
+                let (declaration, name) = func_name.rsplit_once("::").unwrap();
+                if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
+                    results.push(Result {
+                        name: self.name().to_string(),
+                        impact: self.impact(),
+                        confidence: self.confidence(),
+                        message: format!(
+                            "{} defined in {} is declared as view but changes state",
+                            name, declaration
+                        ),
+                    });
+                }
+                let subcalls = func.private_functions_calls().collect();
+                self.check_view_subcalls(
+                    compilation_unit,
+                    declaration,
+                    name,
+                    &mut results,
+                    subcalls,
+                    &mut tracked_fns,
+                )
             }
-            let subcalls = func.private_functions_calls().collect();
-            self.check_view_subcalls(
-                compilation_unit,
-                declaration,
-                name,
-                &mut results,
-                subcalls,
-                &mut tracked_fns
-            );
         }
         results
     }
@@ -70,6 +74,7 @@ impl UnenforcedView {
         if subcalls.is_empty() {
             return;
         }
+
         for call in subcalls {
             // do lookup
             if let SierraStatement::Invocation(invoc) = call {

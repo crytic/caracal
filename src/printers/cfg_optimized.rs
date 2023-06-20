@@ -15,15 +15,19 @@ impl Printer for CFGOptimizedPrinter {
 
     fn run(&self, core: &CoreUnit, opts: PrintOpts) -> Vec<Result> {
         let mut results = Vec::new();
-        let compilation_unit = core.get_compilation_unit();
+        let compilation_units = core.get_compilation_units();
 
         match opts.filter {
-            Filter::All => compilation_unit
-                .functions()
-                .for_each(|f| self.print_cfg_optimized(f, &mut results)),
-            Filter::UserFunctions => compilation_unit
-                .functions_user_defined()
-                .for_each(|f| self.print_cfg_optimized(f, &mut results)),
+            Filter::All => compilation_units.iter().for_each(|comp_unit| {
+                comp_unit
+                    .functions()
+                    .for_each(|f| self.print_cfg_optimized(f, &mut results))
+            }),
+            Filter::UserFunctions => compilation_units.iter().for_each(|comp_unit| {
+                comp_unit
+                    .functions_user_defined()
+                    .for_each(|f| self.print_cfg_optimized(f, &mut results))
+            }),
         }
 
         results
