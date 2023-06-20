@@ -1,6 +1,7 @@
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::core::compilation_unit::CompilationUnit;
 use crate::core::core_unit::CoreUnit;
+use crate::core::function::Type;
 use crate::utils::filter_builtins_from_returns;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -54,6 +55,22 @@ impl Detector for UnusedReturn {
                             //    struct_deconstruct<Tuple<felt252>>([9]) -> ([11]);
                             // followed possibly by others struct_deconstruct and eventually a drop
                             // Note: we should avoid report when a Unit () is dropped
+
+                            if let Some(f) = compilation_unit.functions().find(|f| {
+                                f.name() == f_called.function.id.debug_name.clone().unwrap()
+                            }) {
+                                // We don't check for unused return in case of Storage functions
+                                if f.ty() == &Type::Storage {
+                                    continue;
+                                }
+                            } else {
+                                // Should never happen
+                                println!(
+                                    "Unused-return: function not found {}",
+                                    f_called.function.id.debug_name.clone().unwrap()
+                                );
+                                continue;
+                            }
 
                             let following_stmts = f.get_statements_at(i + 1);
                             if let SierraStatement::Invocation(invoc) = &following_stmts[0] {
