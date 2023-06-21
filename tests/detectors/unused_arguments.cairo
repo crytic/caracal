@@ -1,18 +1,19 @@
 use array::ArrayTrait;
 
-#[contract]
-mod UnusedArguments { 
+#[starknet::contract]
+mod UnusedArguments {
+    #[storage]
     struct Storage {
         value: felt252,
     }
 
-    #[external]
-    fn unused_1(a: felt252, b: felt252) {
-        value::write(a);
+    #[external(v0)]
+    fn unused_1(ref self: ContractState, a: felt252, b: felt252) {
+        self.value.write(a);
     }
 
-    #[external]
-    fn unused_2(array: Array::<felt252>, l: felt252) -> felt252{
+    #[external(v0)]
+    fn unused_2(self: @ContractState, array: Array::<felt252>, l: felt252) -> felt252{
         1
     }
 

@@ -1,11 +1,12 @@
-#[contract]
+#[starknet::contract]
 mod UnenforcedView {
+    #[storage]
     struct Storage {
         value: felt252,
     }
 
-    #[view]
-    fn writes_to_storage_indirect(val: felt252) {
+    #[external(v0)]
+    fn writes_to_storage_indirect(self: @ContractState, val: felt252) {
        f1(val);
     }
 
@@ -18,23 +19,23 @@ mod UnenforcedView {
         value::write(val);
     }
 
-    #[view]
-    fn writes_to_storage_direct(val:felt252) {
+    #[external(v0)]
+    fn writes_to_storage_direct(self: @ContractState, val:felt252) {
         value::write(val);
     }
 
-    #[view]
-    fn recursive_storage_write_direct(val: felt252) {
-        if val ==0 {
+    #[external(v0)]
+    fn recursive_storage_write_direct(self: @ContractState, val: felt252) {
+        if val == 0 {
             ()
         }
         value::write(val);
         recursive_storage_write_direct(val-1);
     }
 
-    #[view]
-    fn recursive_storage_write_indirect(val: felt252) {
-        if val ==0 {
+    #[external(v0)]
+    fn recursive_storage_write_indirect(self: @ContractState, val: felt252) {
+        if val == 0 {
             ()
         }
         f3(val);
@@ -46,8 +47,8 @@ mod UnenforcedView {
     }
 
 
-    #[view]
-    fn does_not_write_to_storage() -> felt252 {
+    #[external(v0)]
+    fn does_not_write_to_storage(self: @ContractState) -> felt252 {
         value::read()
     }
 }
