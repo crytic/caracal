@@ -1,11 +1,12 @@
 use cairo_lang_sierra::extensions::lib_func::{OutputVarInfo, ParamSignature};
 use cairo_lang_sierra::ids::VarId;
 
-pub const BUILTINS: [&str; 7] = [
+pub const BUILTINS: [&str; 8] = [
     "Pedersen",
     "RangeCheck",
     "Bitwise",
     "EcOp",
+    "Poseidon",
     "SegmentArena",
     "GasBuiltin",
     "System",
