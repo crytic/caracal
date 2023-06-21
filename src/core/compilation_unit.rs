@@ -11,7 +11,7 @@ use cairo_lang_sierra::program::{
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_starknet::abi::{
     Contract,
-    Item::{Event, Function as AbiFunction},
+    Item::Function as AbiFunction,
 };
 
 pub struct CompilationUnit {
@@ -95,7 +95,11 @@ impl CompilationUnit {
     }
 
     fn append_function(&mut self, data: SierraFunction, statements: Vec<SierraStatement>) {
-        self.functions.push(Function::new(data, statements));
+        // The compiler adds unsafe_new_contract_state which holds the storage variables
+        // for now we don't consider it
+        if !data.id.to_string().ends_with("::unsafe_new_contract_state") {
+            self.functions.push(Function::new(data, statements));
+        }
     }
 
     fn set_functions_type(&mut self) {
@@ -104,7 +108,7 @@ impl CompilationUnit {
             .sierra_program
             .funcs
             .iter()
-            .filter(|f| f.id.to_string().contains("__external::"))
+            .filter(|f| f.id.to_string().contains("::__external::"))
             .map(|f| {
                 f.id.to_string()
                     .split_once("__external::")
@@ -167,12 +171,12 @@ impl CompilationUnit {
                     }
                 } else if l1_handler_functions.contains(&full_name) {
                     f.set_ty(Type::L1Handler);
-                } else if full_name.ends_with("::address")
-                    || full_name.ends_with("::read")
-                    || full_name.ends_with("::write")
+                } else if full_name.ends_with("::InternalContractStateImpl::address")
+                    || full_name.ends_with("::InternalContractStateImpl::read")
+                    || full_name.ends_with("::InternalContractStateImpl::write")
                 {
                     // We split by the base_module if it's not Some then we are not in the contract module
-                    // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::read
+                    // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::InternalContractStateImpl::read
                     // Get the possible bases for the current function
                     let mut current_bases: Vec<&String> = base_modules
                         .iter()
@@ -188,8 +192,8 @@ impl CompilationUnit {
                         current_bases.sort_by(|b1, b2| {
                             b1.matches("::").count().cmp(&b2.matches("::").count())
                         });
-                        // For a storage variable function we would get ["name", "read"]
-                        let second_part = full_name
+                        // For a storage variable function we would get ["name", "InternalContractStateImpl", "read"]
+                        let full_name_splitted = full_name
                             .split_once(current_bases[0])
                             .unwrap()
                             .1
@@ -198,7 +202,9 @@ impl CompilationUnit {
                         // We assume it's a function for a storage variable
                         // however if there is an immediate submodule with a read/write/address function
                         // it will be incorrectly set as Storage
-                        if second_part.len() == 2 {
+                        if full_name_splitted.len() == 3
+                            && full_name_splitted[1] == "InternalContractStateImpl"
+                        {
                             f.set_ty(Type::Storage);
                         } else {
                             f.set_ty(Type::Private);
@@ -209,56 +215,16 @@ impl CompilationUnit {
                         f.set_ty(Type::Private);
                     }
                 // ABI trait function for library call
-                } else if full_name.contains("LibraryDispatcherImpl::") {
+                } else if full_name.contains("::LibraryDispatcherImpl::") {
                     f.set_ty(Type::AbiLibraryCall)
                 // ABI trait function for call contract
-                } else if full_name.contains("DispatcherImpl::") {
+                } else if full_name.contains("::DispatcherImpl::") {
                     f.set_ty(Type::AbiCallContract)
+                } else if full_name.contains("::ContractStateEventEmitter::emit::") {
+                    // Event
+                    f.set_ty(Type::Event);
                 } else {
-                    // Event or private function
-                    // Get the possible bases for the current function
-                    let mut current_bases: Vec<&String> = base_modules
-                        .iter()
-                        .filter(|base| full_name.split_once(*base).is_some())
-                        .collect();
-                    if !current_bases.is_empty() {
-                        // Need this in case there are submodules with the same function name
-                        // a::b::f
-                        // a::b::c::f
-                        // Both would be in current_bases however the correct is a::b::c
-                        // the one which is more specific
-                        current_bases.sort_by(|b1, b2| {
-                            b1.matches("::").count().cmp(&b2.matches("::").count())
-                        });
-
-                        let second_part = full_name.split_once(current_bases[0]).unwrap().1;
-                        // If it contains :: it means it's a function in a submodule so it should be private
-                        if second_part.contains("::") {
-                            f.set_ty(Type::Private);
-                        } else {
-                            // Could be an event or a private function in the contract's module
-                            let possible_event_name = full_name.rsplit_once("::").unwrap().1;
-
-                            let mut found = false;
-                            for item in self.abi.items.iter() {
-                                if let Event(e) = item {
-                                    if e.name == possible_event_name {
-                                        f.set_ty(Type::Event);
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if !found {
-                                f.set_ty(Type::Private);
-                            }
-                        }
-                    } else {
-                        // We are not in the contract module
-                        // set the function to private
-                        f.set_ty(Type::Private);
-                    }
+                    f.set_ty(Type::Private);
                 }
             }
         } else {
