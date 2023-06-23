@@ -23,7 +23,7 @@ impl fmt::Display for dyn Detector {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Impact {
     High,
     Medium,
