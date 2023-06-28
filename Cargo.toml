@@ -28,6 +28,15 @@ cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", rev = 
 cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", rev = "834df7e" }
 cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", rev = "834df7e" }
 
+
+# For -Zminimal-versions
+string_cache = "0.8.4"
+io-lifetimes = "1.0.2"
+bit-vec = "0.6.3"
+rustix = "0.36.9"
+fnv = "1.0.5"
+
+
 [dev-dependencies]
 insta = { version = "1.29", features = ["glob"] }
 
@@ -37,10 +46,18 @@ opt-level = 3
 [profile.dev.package.similar]
 opt-level = 3
 
-
-# For -Zminimal-versions
-string_cache = "0.8.4"
-io-lifetimes = "1.0.2"
-bit-vec = "0.6.3"
-rustix = "0.36.9"
-fnv = "1.0.5"
+# For dylint
+[workspace.metadata.dylint]
+libraries = [
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/general/*" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/supplementary/*" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/collapsible_unwrap" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/const_path_join" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/env_literal" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/inconsistent_qualification" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/misleading_variable_name" },
+    # { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/missing_doc_comment_openai" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/question_mark_in_expression" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/ref_aware_redundant_closure_for_method_calls" },
+    { git = "https://github.com/trailofbits/dylint", pattern = "examples/restriction/suboptimal_pattern" },
+]

@@ -42,6 +42,37 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+  dylint:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.toolchain }} / dylint
+    permissions:
+      contents: read
+      checks: write
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, beta]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy
+      - name: Install dylint
+        run: cargo install cargo-dylint dylint-link
+      - name: generate warning.json
+        run: >
+          cargo clippy --message-format=json --
+          --force-warn=clippy::all
+          --force-warn=clippy::pedantic
+          --force-warn=clippy::expect_used
+          --force-warn=clippy::unwrap_used
+          --force-warn=clippy::panic > warnings.json
+      - name: run dylint
+        run: cargo dylint --all -- --all-features --all-targets
   doc:
     runs-on: ubuntu-latest
     name: nightly / doc
