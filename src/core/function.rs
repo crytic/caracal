@@ -1,6 +1,7 @@
 use std::io::Write;
 
 use super::cfg::{Cfg, CfgOptimized, CfgRegular};
+use crate::utils::BUILTINS;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{
@@ -8,17 +9,7 @@ use cairo_lang_sierra::program::{
 };
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 
-const BUILTINS: [&str; 7] = [
-    "Pedersen",
-    "RangeCheck",
-    "Bitwise",
-    "EcOp",
-    "SegmentArena",
-    "GasBuiltin",
-    "System",
-];
-
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Type {
     /// External function defined by the user
     External,
@@ -41,6 +32,8 @@ pub enum Type {
     AbiCallContract,
     /// Function of a trait with the ABI attribute that does a library call
     AbiLibraryCall,
+    /// L1 handler function
+    L1Handler,
 }
 
 #[derive(Clone)]
@@ -63,8 +56,12 @@ pub struct Function {
     core_functions_calls: Vec<SierraStatement>,
     /// Private functions called
     private_functions_calls: Vec<SierraStatement>,
-    /// Events emitted
+    /// Events emitted (NOTE it doesn't have events emitted using the syscall directly)
     events_emitted: Vec<SierraStatement>,
+    /// External functions called through an ABI trait (NOTE it doesn't have external functions called using the syscall directly)
+    external_functions_calls: Vec<SierraStatement>,
+    /// Library functions called through an ABI trait (NOTE it doesn't have library functions called using the syscall directly)
+    library_functions_calls: Vec<SierraStatement>,
 }
 
 impl Function {
@@ -80,6 +77,8 @@ impl Function {
             core_functions_calls: Vec::new(),
             private_functions_calls: Vec::new(),
             events_emitted: Vec::new(),
+            external_functions_calls: Vec::new(),
+            library_functions_calls: Vec::new(),
         }
     }
 
@@ -106,6 +105,18 @@ impl Function {
 
     pub fn private_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
         self.private_functions_calls.iter()
+    }
+
+    pub fn events_emitted(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.events_emitted.iter()
+    }
+
+    pub fn external_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.external_functions_calls.iter()
+    }
+
+    pub fn library_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.library_functions_calls.iter()
     }
 
     /// Function return variables without the builtins
@@ -193,6 +204,12 @@ impl Function {
                                 Type::Event => self.events_emitted.push(s.clone()),
                                 Type::Core => self.core_functions_calls.push(s.clone()),
                                 Type::Private => self.private_functions_calls.push(s.clone()),
+                                Type::AbiCallContract => {
+                                    self.external_functions_calls.push(s.clone())
+                                }
+                                Type::AbiLibraryCall => {
+                                    self.library_functions_calls.push(s.clone())
+                                }
                                 _ => (),
                             }
                             break;
@@ -207,9 +224,10 @@ impl Function {
         self.ty = Some(ty);
     }
 
-    pub fn cfg_to_dot(&self, cfg: &dyn Cfg) {
+    /// Write to a file the function's CFG and return the filename
+    pub fn cfg_to_dot(&self, cfg: &dyn Cfg) -> String {
         // name for now good enough
-        let name = format!(
+        let file_name = format!(
             "{}.dot",
             self.name()
                 .split('<')
@@ -218,14 +236,16 @@ impl Function {
                 .expect("Error when creating the filename")
         )
         .replace("::", "_");
-        println!("FILENAME {name}");
+
         let mut f = std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
-            .open(name)
+            .open(&file_name)
             .expect("Error when creating file");
+
         f.write_all(b"digraph{\n").unwrap();
+
         for bb in cfg.get_basic_blocks() {
             let mut ins = String::new();
             bb.get_instructions()
@@ -241,6 +261,9 @@ impl Function {
                     .unwrap();
             }
         }
+
         f.write_all(b"}\n").unwrap();
+
+        file_name
     }
 }

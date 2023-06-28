@@ -14,12 +14,12 @@ use cairo_lang_starknet::abi::{
     Item::{Event, Function as AbiFunction},
 };
 
-pub struct CompilationUnit<'a> {
+pub struct CompilationUnit {
     /// The compiled sierra program
-    sierra_program: &'a Program,
+    sierra_program: Program,
     /// Functions of the program
     functions: Vec<Function>,
-    /// Abi of the compiled starknet contract
+    /// Abi of the compiled starknet contracts
     abi: Contract,
     /// Helper registry to get the concrete type from an id
     registry: ProgramRegistry<CoreType, CoreLibfunc>,
@@ -27,9 +27,9 @@ pub struct CompilationUnit<'a> {
     taint: HashMap<String, Taint>,
 }
 
-impl<'a> CompilationUnit<'a> {
+impl CompilationUnit {
     pub fn new(
-        sierra_program: &'a Program,
+        sierra_program: Program,
         abi: Contract,
         registry: ProgramRegistry<CoreType, CoreLibfunc>,
     ) -> Self {
@@ -48,12 +48,12 @@ impl<'a> CompilationUnit<'a> {
     }
 
     /// Returns the functions that are defined by the user
-    /// Constructor - External - View - Private
+    /// Constructor - External - View - Private - L1Handler
     pub fn functions_user_defined(&self) -> impl Iterator<Item = &Function> {
         self.functions.iter().filter(|f| {
             matches!(
                 f.ty(),
-                Type::Constructor | Type::External | Type::View | Type::Private
+                Type::Constructor | Type::External | Type::View | Type::Private | Type::L1Handler
             )
         })
     }
@@ -66,7 +66,11 @@ impl<'a> CompilationUnit<'a> {
     pub fn is_tainted(&self, function_name: String, variable: VarId) -> bool {
         let wrapped_variable = WrapperVariable::new(function_name, variable);
         let mut parameters = HashSet::new();
-        for external_function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
+        for external_function in self
+            .functions
+            .iter()
+            .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler))
+        {
             for param in external_function.params() {
                 parameters.insert(WrapperVariable::new(
                     external_function.name(),
@@ -95,29 +99,35 @@ impl<'a> CompilationUnit<'a> {
     }
 
     fn set_functions_type(&mut self) {
-        // Get a wrapper function and then get the base module from it
-        let wrapper_function = self
+        // Get the possible base modules
+        let base_modules: HashSet<String> = self
             .sierra_program
             .funcs
             .iter()
-            .find(|f| f.id.to_string().contains("__external::"));
-        if let Some(f) = wrapper_function {
-            let base_module =
+            .filter(|f| f.id.to_string().contains("__external::"))
+            .map(|f| {
                 f.id.to_string()
                     .split_once("__external::")
                     .unwrap()
                     .0
-                    .to_string();
-            let mut external_functions = HashSet::new();
-            let mut constructor = String::new();
+                    .to_owned()
+            })
+            .collect();
 
-            // Gather all the external functions and the constructor
+        if !base_modules.is_empty() {
+            let mut external_functions = HashSet::new();
+            let mut constructors = HashSet::new();
+            let mut l1_handler_functions = HashSet::new();
+
+            // Gather all the external/l1_handler functions and the constructor of each contract
             for f in self.sierra_program.funcs.iter() {
                 let full_name = f.id.to_string();
                 if full_name.contains("::__external::") {
                     external_functions.insert(full_name.replace("__external::", ""));
-                } else if full_name.contains("__constructor") {
-                    constructor = full_name.replace("__constructor::", "");
+                } else if full_name.contains("::__constructor::") {
+                    constructors.insert(full_name.replace("__constructor::", ""));
+                } else if full_name.contains("::__l1_handler::") {
+                    l1_handler_functions.insert(full_name.replace("__l1_handler::", ""));
                 }
             }
 
@@ -129,9 +139,10 @@ impl<'a> CompilationUnit<'a> {
                     f.set_ty(Type::Core);
                 } else if full_name.contains("::__external::")
                     || full_name.contains("::__constructor::")
+                    || full_name.contains("::__l1_handler::")
                 {
                     f.set_ty(Type::Wrapper);
-                } else if full_name == constructor {
+                } else if constructors.contains(&full_name) {
                     // Constructor
                     f.set_ty(Type::Constructor);
                 } else if external_functions.contains(&full_name) {
@@ -154,17 +165,36 @@ impl<'a> CompilationUnit<'a> {
                             }
                         }
                     }
+                } else if l1_handler_functions.contains(&full_name) {
+                    f.set_ty(Type::L1Handler);
                 } else if full_name.ends_with("::address")
                     || full_name.ends_with("::read")
                     || full_name.ends_with("::write")
                 {
                     // We split by the base_module if it's not Some then we are not in the contract module
                     // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::read
-                    let second_part = full_name.split_once(&base_module);
+                    // Get the possible bases for the current function
+                    let mut current_bases: Vec<&String> = base_modules
+                        .iter()
+                        .filter(|base| full_name.split_once(*base).is_some())
+                        .collect();
 
-                    if let Some(second_part) = second_part {
+                    if !current_bases.is_empty() {
+                        // Need this in case there are submodules with the same function name
+                        // a::b::f
+                        // a::b::c::f
+                        // Both would be in current_bases however the correct is a::b::c
+                        // the one which is more specific
+                        current_bases.sort_by(|b1, b2| {
+                            b1.matches("::").count().cmp(&b2.matches("::").count())
+                        });
                         // For a storage variable function we would get ["name", "read"]
-                        let second_part = second_part.1.split("::").collect::<Vec<&str>>();
+                        let second_part = full_name
+                            .split_once(current_bases[0])
+                            .unwrap()
+                            .1
+                            .split("::")
+                            .collect::<Vec<&str>>();
                         // We assume it's a function for a storage variable
                         // however if there is an immediate submodule with a read/write/address function
                         // it will be incorrectly set as Storage
@@ -179,16 +209,29 @@ impl<'a> CompilationUnit<'a> {
                         f.set_ty(Type::Private);
                     }
                 // ABI trait function for library call
-                } else if full_name.ends_with("LibraryDispatcher") {
+                } else if full_name.contains("LibraryDispatcherImpl::") {
                     f.set_ty(Type::AbiLibraryCall)
                 // ABI trait function for call contract
-                } else if full_name.ends_with("Dispatcher") {
+                } else if full_name.contains("DispatcherImpl::") {
                     f.set_ty(Type::AbiCallContract)
                 } else {
                     // Event or private function
-                    let second_part = full_name.split_once(&base_module);
-                    if let Some(second_part) = second_part {
-                        let second_part = second_part.1;
+                    // Get the possible bases for the current function
+                    let mut current_bases: Vec<&String> = base_modules
+                        .iter()
+                        .filter(|base| full_name.split_once(*base).is_some())
+                        .collect();
+                    if !current_bases.is_empty() {
+                        // Need this in case there are submodules with the same function name
+                        // a::b::f
+                        // a::b::c::f
+                        // Both would be in current_bases however the correct is a::b::c
+                        // the one which is more specific
+                        current_bases.sort_by(|b1, b2| {
+                            b1.matches("::").count().cmp(&b2.matches("::").count())
+                        });
+
+                        let second_part = full_name.split_once(current_bases[0]).unwrap().1;
                         // If it contains :: it means it's a function in a submodule so it should be private
                         if second_part.contains("::") {
                             f.set_ty(Type::Private);
@@ -206,6 +249,7 @@ impl<'a> CompilationUnit<'a> {
                                     }
                                 }
                             }
+
                             if !found {
                                 f.set_ty(Type::Private);
                             }
@@ -230,7 +274,8 @@ impl<'a> CompilationUnit<'a> {
     /// such as create the functions with the corresponding statements
     pub fn analyze(&mut self) {
         // Add the functions in the sierra program
-        let mut funcs_chunks = self.sierra_program.funcs.windows(2).peekable();
+        let funcs = self.sierra_program.funcs.clone();
+        let mut funcs_chunks = funcs.windows(2).peekable();
 
         // There is only 1 function
         if funcs_chunks.peek().is_none() {
@@ -289,27 +334,37 @@ impl<'a> CompilationUnit<'a> {
         self.propagate_taints();
     }
 
-    /// Propagate the taints from external functions to private functions
+    /// Propagate the taints from external/l1_handler functions to private functions
     fn propagate_taints(&mut self) {
-        // Collect the arguments of all the external functions
+        // Collect the arguments of all the external/l1_handler functions
         let mut arguments_external_functions: HashSet<WrapperVariable> = HashSet::new();
-        for function in self.functions.iter().filter(|f| *f.ty() == Type::External) {
+        for function in self
+            .functions
+            .iter()
+            .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler))
+        {
             for param in function.params() {
                 arguments_external_functions
                     .insert(WrapperVariable::new(function.name(), param.id.clone()));
             }
         }
 
+        // There aren't external functions we don't need to propagate anything
+        if arguments_external_functions.is_empty() {
+            return;
+        }
+
         let mut changed = true;
-        // Iterate external and private functions and propagate the taints to each private function they call
+        // Iterate external, l1_handler, private functions and propagate the taints to each private function they call
         // until a fixpoint when no new informations were propagated
         while changed {
+            changed = false;
+
             for calling_function in self
                 .functions
                 .iter()
-                .filter(|f| *f.ty() == Type::External || *f.ty() == Type::Private)
+                .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler | Type::Private))
             {
-                changed = false;
                 for function_call in calling_function.private_functions_calls() {
                     // It will always be an invocation
                     if let GenStatement::Invocation(invoc) = function_call {

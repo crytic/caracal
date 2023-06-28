@@ -1,0 +1,31 @@
+---
+source: tests/integration_tests.rs
+expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
+input_file: tests/detectors/unenforced_view.cairo
+---
+[
+    Result {
+        name: "unenforced-view",
+        impact: Medium,
+        confidence: Medium,
+        message: "writes_to_storage_indirect defined in unenforced_view::unenforced_view::UnenforcedView is declared as view but changes state",
+    },
+    Result {
+        name: "unenforced-view",
+        impact: Medium,
+        confidence: Medium,
+        message: "writes_to_storage_direct defined in unenforced_view::unenforced_view::UnenforcedView is declared as view but changes state",
+    },
+    Result {
+        name: "unenforced-view",
+        impact: Medium,
+        confidence: Medium,
+        message: "recursive_storage_write_direct defined in unenforced_view::unenforced_view::UnenforcedView is declared as view but changes state",
+    },
+    Result {
+        name: "unenforced-view",
+        impact: Medium,
+        confidence: Medium,
+        message: "recursive_storage_write_indirect defined in unenforced_view::unenforced_view::UnenforcedView is declared as view but changes state",
+    },
+]

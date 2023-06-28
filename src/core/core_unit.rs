@@ -1,71 +1,41 @@
-use crate::detectors::detector::Result;
-use crate::detectors::get_detectors;
-use crate::{Args, CompilationUnit};
-use crate::{Filter, Print};
+use anyhow::Result;
+use std::path::PathBuf;
 
-pub struct CoreUnit<'a> {
-    compilation_unit: CompilationUnit<'a>,
-    args: Args,
+use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::program_registry::ProgramRegistry;
+
+use crate::compilation::compile;
+use crate::core::compilation_unit::CompilationUnit;
+
+pub struct CoreOpts {
+    pub target: PathBuf,
+    pub corelib: Option<PathBuf>,
 }
 
-impl<'a> CoreUnit<'a> {
-    pub fn new(compilation_unit: CompilationUnit<'a>, args: Args) -> Self {
-        CoreUnit {
-            compilation_unit,
-            args,
-        }
+pub struct CoreUnit {
+    compilation_units: Vec<CompilationUnit>,
+}
+
+impl CoreUnit {
+    pub fn new(opts: CoreOpts) -> Result<Self> {
+        let program_compiled = compile(opts)?;
+        let compilation_units = program_compiled
+            .iter()
+            .map(|p| {
+                let mut compilation_unit = CompilationUnit::new(
+                    p.sierra.clone(),
+                    p.abi.clone(),
+                    ProgramRegistry::<CoreType, CoreLibfunc>::new(&p.sierra).unwrap(),
+                );
+                compilation_unit.analyze();
+                compilation_unit
+            })
+            .collect();
+
+        Ok(CoreUnit { compilation_units })
     }
 
-    pub fn get_compilation_unit(&self) -> &CompilationUnit {
-        &self.compilation_unit
-    }
-
-    pub fn run(&mut self) {
-        self.compilation_unit.analyze();
-        let mut results: Vec<Result> = Vec::new();
-        let detectors_to_run = get_detectors();
-        for d in detectors_to_run {
-            results.extend(d.run(self));
-        }
-
-        for r in results {
-            println!(
-                "{} impact: {} confidence: {}\n {}",
-                r.name, r.impact, r.confidence, r.message
-            );
-        }
-
-        self.run_printer();
-    }
-
-    fn run_printer(&self) {
-        match self.args.filter {
-            Filter::All => match self.args.print {
-                Some(Print::Cfg) => {
-                    for f in self.compilation_unit.functions() {
-                        f.cfg_to_dot(f.get_cfg());
-                    }
-                }
-                Some(Print::CfgOptimized) => {
-                    for f in self.compilation_unit.functions() {
-                        f.cfg_to_dot(f.get_cfg_optimized());
-                    }
-                }
-                _ => (),
-            },
-            Filter::UserFunctions => match self.args.print {
-                Some(Print::Cfg) => {
-                    for f in self.compilation_unit.functions_user_defined() {
-                        f.cfg_to_dot(f.get_cfg());
-                    }
-                }
-                Some(Print::CfgOptimized) => {
-                    for f in self.compilation_unit.functions_user_defined() {
-                        f.cfg_to_dot(f.get_cfg_optimized());
-                    }
-                }
-                _ => (),
-            },
-        }
+    pub fn get_compilation_units(&self) -> &Vec<CompilationUnit> {
+        &self.compilation_units
     }
 }

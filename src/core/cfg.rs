@@ -14,6 +14,12 @@ pub struct CfgRegular {
     basic_blocks: Vec<BasicBlock>,
 }
 
+impl Default for CfgRegular {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CfgRegular {
     pub fn new() -> Self {
         CfgRegular {
@@ -221,6 +227,12 @@ impl Cfg for CfgRegular {
 #[derive(Debug, Clone)]
 pub struct CfgOptimized {
     basic_blocks: Vec<BasicBlock>,
+}
+
+impl Default for CfgOptimized {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CfgOptimized {
