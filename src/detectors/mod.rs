@@ -20,5 +20,6 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<unused_return::UnusedReturn>::default(),
         Box::<unenforced_view::UnenforcedView>::default(),
         Box::<reentrancy_benign::ReentrancyBenign>::default(),
+        Box::<reentrancy::Reentrancy>::default(),
     ]
 }
