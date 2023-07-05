@@ -1,0 +1,13 @@
+---
+source: tests/integration_tests.rs
+expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
+input_file: tests/detectors/unchecked_l1_handler_from.cairo
+---
+[
+    Result {
+        name: "unchecked-l1-handler-from",
+        impact: High,
+        confidence: Medium,
+        message: "The L1 handler function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::bad does not check the L1 from address",
+    },
+]

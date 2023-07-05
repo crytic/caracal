@@ -3,6 +3,7 @@ use self::detector::Detector;
 pub mod controlled_library_call;
 pub mod dead_code;
 pub mod detector;
+pub mod unchecked_l1_handler_from;
 pub mod unenforced_view;
 pub mod unused_arguments;
 pub mod unused_events;
@@ -16,5 +17,6 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<unused_arguments::UnusedArguments>::default(),
         Box::<unused_return::UnusedReturn>::default(),
         Box::<unenforced_view::UnenforcedView>::default(),
+        Box::<unchecked_l1_handler_from::UncheckedL1HandlerFrom>::default(),
     ]
 }
