@@ -320,13 +320,18 @@ impl CompilationUnit {
 
         self.set_functions_type();
 
-        let mut functions_copy = Vec::with_capacity(self.functions.len());
-        functions_copy.clone_from(&self.functions);
-
         // Analyze each function
+        let mut functions = Vec::with_capacity(self.functions.len());
+        functions.clone_from(&self.functions);
         self.functions
             .iter_mut()
-            .for_each(|f| f.analyze(&functions_copy, &self.registry));
+            .for_each(|f| f.analyze(&functions, &self.registry));
+
+        // Run analyses on each function after all the functions have been analyzed
+        functions.clone_from(&self.functions);
+        self.functions
+            .iter_mut()
+            .for_each(|f| f.run_analyses(&functions, &self.registry));
 
         // Compute taints
         self.functions.iter().for_each(|f| {

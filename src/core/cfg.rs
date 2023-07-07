@@ -1,23 +1,20 @@
 use std::collections::{HashMap, HashSet};
 
 use super::basic_block::BasicBlock;
+use super::function::Function;
 use super::instruction::Instruction;
+use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::program::{BranchTarget, Statement as SierraStatement};
+use cairo_lang_sierra::program_registry::ProgramRegistry;
 
 pub trait Cfg {
     fn get_basic_blocks(&self) -> &[BasicBlock];
     fn get_basic_block(&self, id: usize) -> Option<&BasicBlock>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CfgRegular {
     basic_blocks: Vec<BasicBlock>,
-}
-
-impl Default for CfgRegular {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl CfgRegular {
@@ -27,12 +24,26 @@ impl CfgRegular {
         }
     }
 
-    pub fn analyze(&mut self, statements: &[SierraStatement], base_pc: usize) {
-        self.compute_basic_blocks(statements, base_pc);
+    pub fn analyze(
+        &mut self,
+        statements: &[SierraStatement],
+        base_pc: usize,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+        function_name: String,
+    ) {
+        self.compute_basic_blocks(statements, base_pc, functions, registry, function_name);
         self.compute_cfg();
     }
 
-    fn compute_basic_blocks(&mut self, statements: &[SierraStatement], base_pc: usize) {
+    fn compute_basic_blocks(
+        &mut self,
+        statements: &[SierraStatement],
+        base_pc: usize,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+        function_name: String,
+    ) {
         // Track basic block ids
         let mut basic_block_counter = 0;
         let mut basic_blocks = Vec::new();
@@ -57,6 +68,9 @@ impl CfgRegular {
                                 &mut basic_blocks,
                                 &mut instructions_current_block,
                                 &mut basic_block_counter,
+                                functions,
+                                registry,
+                                function_name.clone(),
                             );
                         }
                         BranchTarget::Statement(pc) => {
@@ -69,6 +83,9 @@ impl CfgRegular {
                                 &mut basic_blocks,
                                 &mut instructions_current_block,
                                 &mut basic_block_counter,
+                                functions,
+                                registry,
+                                function_name.clone(),
                             );
                         }
                     }
@@ -93,6 +110,9 @@ impl CfgRegular {
                         &mut basic_blocks,
                         &mut instructions_current_block,
                         &mut basic_block_counter,
+                        functions,
+                        registry,
+                        function_name.clone(),
                     );
                 }
                 SierraStatement::Return(_) => {
@@ -102,8 +122,11 @@ impl CfgRegular {
                         .push(Instruction::new(current_pc, statement.clone()));
                     // Create a new basic block
                     basic_blocks.push(BasicBlock::new(
+                        function_name.clone(),
                         basic_block_counter,
                         instructions_current_block.clone(),
+                        functions,
+                        registry,
                     ));
                     // Clear the current instructions for the next basic block
                     instructions_current_block.clear();
@@ -115,6 +138,7 @@ impl CfgRegular {
         self.basic_blocks = basic_blocks;
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn handle_statement_basic_block(
         &self,
         statement: SierraStatement,
@@ -123,6 +147,9 @@ impl CfgRegular {
         basic_blocks: &mut Vec<BasicBlock>,
         instructions_current_block: &mut Vec<Instruction>,
         basic_block_counter: &mut usize,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+        function_name: String,
     ) {
         // Add the instruction in the current block
         instructions_current_block.push(Instruction::new(current_pc, statement));
@@ -131,8 +158,11 @@ impl CfgRegular {
         if target_pcs.get(&(current_pc + 1)).is_some() {
             // Create a new basic block
             basic_blocks.push(BasicBlock::new(
+                function_name,
                 *basic_block_counter,
                 instructions_current_block.clone(),
+                functions,
+                registry,
             ));
             // Clear the current instructions for the next basic block
             instructions_current_block.clear();
@@ -224,15 +254,9 @@ impl Cfg for CfgRegular {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CfgOptimized {
     basic_blocks: Vec<BasicBlock>,
-}
-
-impl Default for CfgOptimized {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl CfgOptimized {

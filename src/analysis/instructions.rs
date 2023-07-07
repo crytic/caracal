@@ -1,6 +1,10 @@
-use super::dataflow::{Analysis, Domain, Forward};
-use crate::core::instruction;
 use std::collections::HashSet;
+
+use super::dataflow::{Analysis, Domain, Forward};
+use crate::core::function::Function;
+use crate::core::{basic_block::BasicBlock, instruction};
+use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::program_registry::ProgramRegistry;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum InstructionDomain {
@@ -51,7 +55,14 @@ impl Analysis for InstructionAnalysis {
         Self::Domain::Bottom
     }
 
-    fn transfer_function(&self, state: &mut Self::Domain, instruction: &instruction::Instruction) {
+    fn transfer_function(
+        &self,
+        _basic_block: &BasicBlock,
+        state: &mut Self::Domain,
+        instruction: &instruction::Instruction,
+        _functions: &[Function],
+        _registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ) {
         let pc = instruction.get_pc();
 
         let new_state = match state {

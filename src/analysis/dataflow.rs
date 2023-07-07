@@ -1,5 +1,9 @@
-use crate::core::{basic_block::BasicBlock, cfg::Cfg, instruction::Instruction};
 use std::collections::{HashMap, VecDeque};
+
+use crate::core::function::Function;
+use crate::core::{basic_block::BasicBlock, cfg::Cfg, instruction::Instruction};
+use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::program_registry::ProgramRegistry;
 
 use super::traversal;
 
@@ -7,13 +11,16 @@ pub trait Direction {
     const IS_FORWARD: bool;
 
     /// Apply the transfer function for the current basic block and propagate
-    fn apply_transfer_function<A: Analysis>(
+    #[allow(clippy::too_many_arguments)]
+    fn apply_transfer_function<A: Analysis + Clone>(
         analysis: &A,
-        current_state: &mut A::Domain,
+        current_state: &mut AnalysisState<A>,
         basic_block: BasicBlock,
         worklist: &mut VecDeque<BasicBlock>,
-        state: &mut HashMap<usize, A::Domain>,
+        global_state: &mut HashMap<usize, AnalysisState<A>>,
         cfg: &dyn Cfg,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     );
 }
 
@@ -22,21 +29,36 @@ pub struct Forward;
 impl Direction for Forward {
     const IS_FORWARD: bool = true;
 
-    fn apply_transfer_function<A: Analysis>(
+    fn apply_transfer_function<A: Analysis + Clone>(
         analysis: &A,
-        current_state: &mut A::Domain,
+        current_state: &mut AnalysisState<A>,
         basic_block: BasicBlock,
         worklist: &mut VecDeque<BasicBlock>,
-        state: &mut HashMap<usize, A::Domain>,
+        global_state: &mut HashMap<usize, AnalysisState<A>>,
         cfg: &dyn Cfg,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ) {
         for instruction in basic_block.get_instructions().iter() {
-            analysis.transfer_function(current_state, instruction);
+            analysis.transfer_function(
+                &basic_block,
+                &mut current_state.pre,
+                instruction,
+                functions,
+                registry,
+            );
         }
+
+        // Set the post state of the current block
+        global_state.get_mut(&basic_block.get_id()).unwrap().post = current_state.pre.clone();
 
         // Propagate
         for bb in basic_block.get_outgoing_basic_blocks() {
-            let changed = state.get_mut(bb).unwrap().join(current_state);
+            let changed = global_state
+                .get_mut(bb)
+                .unwrap()
+                .pre
+                .join(&current_state.pre);
             if changed {
                 let basic_block = cfg.get_basic_block(*bb).unwrap().clone();
                 if !worklist.contains(&basic_block) {
@@ -52,21 +74,36 @@ pub struct Backward;
 impl Direction for Backward {
     const IS_FORWARD: bool = false;
 
-    fn apply_transfer_function<A: Analysis>(
+    fn apply_transfer_function<A: Analysis + Clone>(
         analysis: &A,
-        current_state: &mut A::Domain,
+        current_state: &mut AnalysisState<A>,
         basic_block: BasicBlock,
         worklist: &mut VecDeque<BasicBlock>,
-        state: &mut HashMap<usize, A::Domain>,
+        global_state: &mut HashMap<usize, AnalysisState<A>>,
         cfg: &dyn Cfg,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ) {
         for instruction in basic_block.get_instructions().iter().rev() {
-            analysis.transfer_function(current_state, instruction);
+            analysis.transfer_function(
+                &basic_block,
+                &mut current_state.post,
+                instruction,
+                functions,
+                registry,
+            );
         }
+
+        // Set the post state of the current block
+        global_state.get_mut(&basic_block.get_id()).unwrap().post = current_state.pre.clone();
 
         // Propagate
         for bb in basic_block.get_incoming_basic_blocks() {
-            let changed = state.get_mut(bb).unwrap().join(current_state);
+            let changed = global_state
+                .get_mut(bb)
+                .unwrap()
+                .pre
+                .join(&current_state.post);
             if changed {
                 let basic_block = cfg.get_basic_block(*bb).unwrap().clone();
                 if !worklist.contains(&basic_block) {
@@ -94,21 +131,36 @@ pub trait Analysis {
     type Direction: Direction;
 
     /// The function applied to each instruction
-    fn transfer_function(&self, state: &mut Self::Domain, instruction: &Instruction);
+    fn transfer_function(
+        &self,
+        basic_block: &BasicBlock,
+        state: &mut Self::Domain,
+        instruction: &Instruction,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    );
     /// The initial state when entering a basic block
     fn bottom_value(&self) -> Self::Domain;
 }
 
+#[derive(Clone, Debug)]
+pub struct AnalysisState<A: Analysis + Clone> {
+    /// State at the start of the basic block
+    pub pre: A::Domain,
+    /// State at the end of the basic block
+    pub post: A::Domain,
+}
+
 /// Engine to solve data flow problems
-pub struct Engine<'a, A: Analysis> {
+pub struct Engine<'a, A: Analysis + Clone> {
     cfg: &'a dyn Cfg,
     analysis: A,
-    state: HashMap<usize, A::Domain>,
+    state: HashMap<usize, AnalysisState<A>>,
 }
 
 impl<'a, A> Engine<'a, A>
 where
-    A: Analysis,
+    A: Analysis + Clone,
 {
     /// Create a new Engine to solve the analysis on the cfg
     pub fn new(cfg: &'a dyn Cfg, analysis: A) -> Self {
@@ -117,7 +169,13 @@ where
 
         // Initialize the state for each basic block with the bottom value
         for i in 0..basic_blocks {
-            state.insert(i, analysis.bottom_value());
+            state.insert(
+                i,
+                AnalysisState {
+                    pre: analysis.bottom_value(),
+                    post: analysis.bottom_value(),
+                },
+            );
         }
 
         Engine {
@@ -128,7 +186,11 @@ where
     }
 
     /// Run the analysis to a fix point
-    pub fn run_analysis(&mut self) {
+    pub fn run_analysis(
+        &mut self,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ) {
         let basic_blocks = self.cfg.get_basic_blocks();
         let mut worklist: VecDeque<BasicBlock> = VecDeque::with_capacity(basic_blocks.len());
 
@@ -145,7 +207,7 @@ where
         while let Some(bb) = worklist.pop_front() {
             let mut state = self
                 .state
-                .get(&bb.get_id())
+                .get_mut(&bb.get_id())
                 .expect("Basic block state not found during data flow analysis")
                 .clone();
 
@@ -156,12 +218,14 @@ where
                 &mut worklist,
                 &mut self.state,
                 self.cfg,
+                functions,
+                registry,
             );
         }
     }
 
     /// Return the result of the analysis after run_analysis was called
-    pub fn result(&self) -> &HashMap<usize, A::Domain> {
+    pub fn result(&self) -> &HashMap<usize, AnalysisState<A>> {
         &self.state
     }
 }
