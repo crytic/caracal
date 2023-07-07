@@ -58,6 +58,10 @@ impl CompilationUnit {
         })
     }
 
+    pub fn function_by_name(&self, name: &str) -> Option<&Function> {
+        self.functions.iter().find(|f| f.name().as_str() == name)
+    }
+
     pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
         &self.registry
     }
