@@ -2,7 +2,7 @@ use super::Cmd;
 use clap::{Args, ValueHint};
 use starknet_static_analysis::{
     core::core_unit::{CoreOpts, CoreUnit},
-    detectors::{detector::Impact, get_detectors},
+    detectors::{detector::Impact, detector::Result, get_detectors},
 };
 use std::path::PathBuf;
 
@@ -79,10 +79,13 @@ impl Cmd for DetectArgs {
             }
         }
 
-        detectors
+        let mut results = detectors
             .iter()
-            .map(|d| d.run(&core))
-            .for_each(|results| results.iter().for_each(|r| println!("{r}")));
+            .flat_map(|d| d.run(&core))
+            .collect::<Vec<Result>>();
+        results.sort();
+
+        results.iter().for_each(|r| println!("{r}"));
 
         Ok(())
     }

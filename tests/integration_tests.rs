@@ -13,9 +13,11 @@ fn test_detectors() {
             )),
         };
         let core = CoreUnit::new(opts).unwrap();
-        insta::assert_debug_snapshot!(get_detectors()
+        let mut results = get_detectors()
             .iter()
             .flat_map(|d| d.run(&core))
-            .collect::<Vec<Result>>());
+            .collect::<Vec<Result>>();
+        results.sort();
+        insta::assert_debug_snapshot!(results);
     });
 }

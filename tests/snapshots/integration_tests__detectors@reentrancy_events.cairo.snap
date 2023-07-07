@@ -1,0 +1,13 @@
+---
+source: tests/integration_tests.rs
+expression: results
+input_file: tests/detectors/reentrancy_events.cairo
+---
+[
+    Result {
+        name: "reentrancy-events",
+        impact: Low,
+        confidence: Medium,
+        message: "Reentrancy in reentrancy_events::reentrancy_events::TestContract::bad1\n\tExternal call function_call<user@reentrancy_events::reentrancy_events::IAnotherContractDispatcherImpl::foo>([8], [9], [10], [11]) -> ([5], [6], [7]) done in reentrancy_events::reentrancy_events::TestContract::bad1\n\tEvent emitted after function_call<user@reentrancy_events::reentrancy_events::TestContract::MyEvent>([17], [18]) -> ([14], [15], [16]) in reentrancy_events::reentrancy_events::TestContract::bad1.",
+    },
+]

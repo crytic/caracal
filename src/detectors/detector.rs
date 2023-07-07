@@ -23,7 +23,7 @@ impl fmt::Display for dyn Detector {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Impact {
     High,
     Medium,
@@ -42,7 +42,7 @@ impl fmt::Display for Impact {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Confidence {
     High,
     Medium,
@@ -59,7 +59,7 @@ impl fmt::Display for Confidence {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Result {
     pub name: String,
     pub impact: Impact,
@@ -71,7 +71,7 @@ impl fmt::Display for Result {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} Impact: {} Confidence: {}\n {}",
+            "{} Impact: {} Confidence: {}\n{}",
             self.name, self.impact, self.confidence, self.message
         )
     }

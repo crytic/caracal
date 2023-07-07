@@ -1,6 +1,10 @@
+use std::collections::HashMap;
 use std::io::Write;
 
 use super::cfg::{Cfg, CfgOptimized, CfgRegular};
+use crate::analysis::dataflow::AnalysisState;
+use crate::analysis::dataflow::Engine;
+use crate::analysis::reentrancy::ReentrancyAnalysis;
 use crate::utils::BUILTINS;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -8,6 +12,12 @@ use cairo_lang_sierra::program::{
     Function as SierraFunction, GenStatement, Param, Statement as SierraStatement,
 };
 use cairo_lang_sierra::program_registry::ProgramRegistry;
+
+#[derive(Clone, Default)]
+pub struct Analyses {
+    /// Reentrancy info result
+    pub reentrancy: HashMap<usize, AnalysisState<ReentrancyAnalysis>>,
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Type {
@@ -62,6 +72,8 @@ pub struct Function {
     external_functions_calls: Vec<SierraStatement>,
     /// Library functions called through an ABI trait (NOTE it doesn't have library functions called using the syscall directly)
     library_functions_calls: Vec<SierraStatement>,
+    /// Analyses results
+    analyses: Analyses,
 }
 
 impl Function {
@@ -79,6 +91,7 @@ impl Function {
             events_emitted: Vec::new(),
             external_functions_calls: Vec::new(),
             library_functions_calls: Vec::new(),
+            analyses: Analyses::default(),
         }
     }
 
@@ -117,6 +130,10 @@ impl Function {
 
     pub fn library_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
         self.library_functions_calls.iter()
+    }
+
+    pub fn analyses(&self) -> &Analyses {
+        &self.analyses
     }
 
     /// Function return variables without the builtins
@@ -167,8 +184,13 @@ impl Function {
         functions: &[Function],
         registry: &ProgramRegistry<CoreType, CoreLibfunc>,
     ) {
-        self.cfg_regular
-            .analyze(&self.statements, self.data.entry_point.0);
+        self.cfg_regular.analyze(
+            &self.statements,
+            self.data.entry_point.0,
+            functions,
+            registry,
+            self.name(),
+        );
         self.cfg_optimized
             .analyze(self.cfg_regular.get_basic_blocks().to_vec());
         self.set_meta_informations(functions, registry);
@@ -188,7 +210,7 @@ impl Function {
                     .expect("Library function not found in the registry");
                 if let CoreConcreteLibfunc::FunctionCall(f_called) = lib_func {
                     // We search for the function called in our list of functions to know its type
-                    for function in functions.iter() {
+                    for function in functions {
                         let function_name = function.name();
                         if function_name.as_str()
                             == f_called.function.id.debug_name.as_ref().unwrap()
@@ -217,6 +239,18 @@ impl Function {
                     }
                 }
             }
+        }
+    }
+
+    pub fn run_analyses(
+        &mut self,
+        functions: &[Function],
+        registry: &ProgramRegistry<CoreType, CoreLibfunc>,
+    ) {
+        if self.ty.unwrap() == Type::External {
+            let mut reentrancy = Engine::new(&self.cfg_regular, ReentrancyAnalysis);
+            reentrancy.run_analysis(functions, registry);
+            self.analyses.reentrancy = reentrancy.result().clone();
         }
     }
 

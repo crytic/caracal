@@ -3,6 +3,9 @@ use self::detector::Detector;
 pub mod controlled_library_call;
 pub mod dead_code;
 pub mod detector;
+pub mod reentrancy;
+pub mod reentrancy_benign;
+pub mod reentrancy_events;
 pub mod unenforced_view;
 pub mod unused_arguments;
 pub mod unused_events;
@@ -16,5 +19,8 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<unused_arguments::UnusedArguments>::default(),
         Box::<unused_return::UnusedReturn>::default(),
         Box::<unenforced_view::UnenforcedView>::default(),
+        Box::<reentrancy_benign::ReentrancyBenign>::default(),
+        Box::<reentrancy::Reentrancy>::default(),
+        Box::<reentrancy_events::ReentrancyEvents>::default(),
     ]
 }

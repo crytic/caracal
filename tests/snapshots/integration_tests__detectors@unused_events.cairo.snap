@@ -1,6 +1,7 @@
 ---
 source: tests/integration_tests.rs
-expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
+expression: results
+input_file: tests/detectors/unused_events.cairo
 ---
 [
     Result {
