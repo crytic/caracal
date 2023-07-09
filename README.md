@@ -1,10 +1,10 @@
-# TBD
+# Caracal
 
-TBD is a static analyzer tool over the SIERRA representation for Starknet smart contracts.
+Caracal is a static analyzer tool over the SIERRA representation for Starknet smart contracts.
 
 ## Features
 - Detectors to detect vulnerable Cairo code
-- Printers to report informations
+- Printers to report information
 - Taint analysis
 - Data flow analysis framework
 
@@ -36,6 +36,7 @@ Num | Detector | What it Detects | Impact | Confidence
 3 | `dead-code` | Private functions never used | Low | Medium
 4 | `unused-arguments` | Unused arguments | Low | High
 5 | `unused-return` | Unused return values | Medium | Medium
+6 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium
 
 ## Printers
 - `cfg`: Export the CFG of each function in a .dot file
