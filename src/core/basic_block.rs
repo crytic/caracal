@@ -72,16 +72,8 @@ impl BasicBlock {
         &self.function
     }
 
-    pub(super) fn get_mut_id(&mut self) -> &mut usize {
-        &mut self.id
-    }
-
     pub fn get_instructions(&self) -> &Vec<Instruction> {
         &self.instructions
-    }
-
-    pub(super) fn get_mut_instructions(&mut self) -> &mut Vec<Instruction> {
-        &mut self.instructions
     }
 
     pub fn get_incoming_basic_blocks(&self) -> &Vec<usize> {

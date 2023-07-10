@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Write;
 
-use super::cfg::{Cfg, CfgOptimized, CfgRegular};
+use super::cfg::{Cfg, CfgRegular};
 use crate::analysis::dataflow::AnalysisState;
 use crate::analysis::dataflow::Engine;
 use crate::analysis::reentrancy::ReentrancyAnalysis;
@@ -56,8 +56,6 @@ pub struct Function {
     statements: Vec<SierraStatement>,
     /// A regular CFG from the statements
     cfg_regular: CfgRegular,
-    /// An optimized CFG from the statements
-    cfg_optimized: CfgOptimized,
     /// Storage variables read (NOTE it doesn't have vars read using the syscall directly)
     storage_vars_read: Vec<SierraStatement>,
     /// Storage variables written (NOTE it doesn't have vars written using the syscall directly)
@@ -83,7 +81,6 @@ impl Function {
             ty: None,
             statements,
             cfg_regular: CfgRegular::new(),
-            cfg_optimized: CfgOptimized::new(),
             storage_vars_read: Vec::new(),
             storage_vars_written: Vec::new(),
             core_functions_calls: Vec::new(),
@@ -175,10 +172,6 @@ impl Function {
         &self.cfg_regular
     }
 
-    pub fn get_cfg_optimized(&self) -> &CfgOptimized {
-        &self.cfg_optimized
-    }
-
     pub fn analyze(
         &mut self,
         functions: &[Function],
@@ -191,8 +184,6 @@ impl Function {
             registry,
             self.name(),
         );
-        self.cfg_optimized
-            .analyze(self.cfg_regular.get_basic_blocks().to_vec());
         self.set_meta_informations(functions, registry);
     }
 
