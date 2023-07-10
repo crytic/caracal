@@ -1,6 +1,6 @@
 use super::Cmd;
 use clap::{Args, ValueHint};
-use starknet_static_analysis::{
+use caracal::{
     core::core_unit::{CoreOpts, CoreUnit},
     detectors::{detector::Impact, detector::Result, get_detectors},
 };

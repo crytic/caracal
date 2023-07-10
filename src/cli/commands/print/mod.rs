@@ -1,7 +1,7 @@
 use super::Cmd;
 use clap::{Args, ValueHint};
-use starknet_static_analysis::core::core_unit::{CoreOpts, CoreUnit};
-use starknet_static_analysis::printers::{get_printers, printer::Filter, printer::PrintOpts};
+use caracal::core::core_unit::{CoreOpts, CoreUnit};
+use caracal::printers::{get_printers, printer::Filter, printer::PrintOpts};
 use std::path::PathBuf;
 
 #[derive(Args, Debug)]
