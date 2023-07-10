@@ -32,6 +32,8 @@ jobs:
         uses: super-linter/super-linter@v5
         env:
           VALIDATE_ALL_CODEBASE: true
+          VALIDATE_RUST_2021: true
+          VALIDATE_RUST_CLIPPY: true
           DEFAULT_BRANCH: master
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
