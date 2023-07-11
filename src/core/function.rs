@@ -6,6 +6,9 @@ use crate::analysis::dataflow::AnalysisState;
 use crate::analysis::dataflow::Engine;
 use crate::analysis::reentrancy::ReentrancyAnalysis;
 use crate::utils::BUILTINS;
+use graphviz_rust::dot_generator::*;
+use graphviz_rust::dot_structures::*;
+use graphviz_rust::printer::{DotPrinter, PrinterContext};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{
@@ -249,8 +252,8 @@ impl Function {
         self.ty = Some(ty);
     }
 
-    /// Write to a file the function's CFG and return the filename
-    pub fn cfg_to_dot(&self, cfg: &dyn Cfg) -> String {
+     /// Write to a file the function's CFG and return the filename
+     pub fn cfg_to_dot(&self, cfg: &dyn Cfg) -> String {
         // name for now good enough
         let file_name = format!(
             "{}.dot",
@@ -261,33 +264,32 @@ impl Function {
                 .expect("Error when creating the filename")
         )
         .replace("::", "_");
+        let mut graph = graph!(di id!(format!("\"{}\"",&file_name)));
 
+        for bb in cfg.get_basic_blocks() {
+            let mut ins = String::new();
+
+            bb.get_instructions()
+                .iter()
+                .for_each(|i| ins.push_str(&format!("{i}\n")));
+            let label = format!("\"BB {}\n{}\"", bb.get_id(), ins);
+            graph.add_stmt(Stmt::from(node!(bb.get_id();attr!("label",label))));
+
+            for destination in bb.get_outgoing_basic_blocks().iter() {
+                graph.add_stmt(Stmt::from(
+                    edge!(node_id!(bb.get_id()) => node_id!(destination)),
+                ));
+            }
+        }
+
+        let output = graph.print(&mut PrinterContext::default());
         let mut f = std::fs::OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
             .open(&file_name)
             .expect("Error when creating file");
-
-        f.write_all(b"digraph{\n").unwrap();
-
-        for bb in cfg.get_basic_blocks() {
-            let mut ins = String::new();
-            bb.get_instructions()
-                .iter()
-                .for_each(|i| ins.push_str(&format!("{i}\n")));
-            f.write_all(
-                format!("{}[label=\"BB {}\n{}\"]\n", bb.get_id(), bb.get_id(), ins).as_bytes(),
-            )
-            .unwrap();
-
-            for destination in bb.get_outgoing_basic_blocks().iter() {
-                f.write_all(format!("{} -> {}\n", bb.get_id(), destination).as_bytes())
-                    .unwrap();
-            }
-        }
-
-        f.write_all(b"}\n").unwrap();
+        f.write_all(output.as_bytes()).unwrap();
 
         file_name
     }

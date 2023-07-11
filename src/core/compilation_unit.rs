@@ -174,40 +174,40 @@ impl CompilationUnit {
                     // We split by the base_module if it's not Some then we are not in the contract module
                     // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::read
                     // Get the possible bases for the current function
-                    let mut current_bases: Vec<&String> = base_modules
-                        .iter()
-                        .filter(|base| full_name.split_once(*base).is_some())
-                        .collect();
+                    // let mut current_bases: Vec<&String> = base_modules
+                    //     .iter()
+                    //     .filter(|base| full_name.split_once(*base).is_some())
+                    //     .collect();
 
-                    if !current_bases.is_empty() {
-                        // Need this in case there are submodules with the same function name
-                        // a::b::f
-                        // a::b::c::f
-                        // Both would be in current_bases however the correct is a::b::c
-                        // the one which is more specific
-                        current_bases.sort_by(|b1, b2| {
-                            b1.matches("::").count().cmp(&b2.matches("::").count())
-                        });
-                        // For a storage variable function we would get ["name", "read"]
-                        let second_part = full_name
-                            .split_once(current_bases[0])
-                            .unwrap()
-                            .1
-                            .split("::")
-                            .collect::<Vec<&str>>();
-                        // We assume it's a function for a storage variable
-                        // however if there is an immediate submodule with a read/write/address function
-                        // it will be incorrectly set as Storage
-                        if second_part.len() == 2 {
-                            f.set_ty(Type::Storage);
-                        } else {
-                            f.set_ty(Type::Private);
-                        }
-                    } else {
-                        // We are not in the contract module
-                        // set the function to private
-                        f.set_ty(Type::Private);
-                    }
+                    // if !current_bases.is_empty() {
+                    //     // Need this in case there are submodules with the same function name
+                    //     // a::b::f
+                    //     // a::b::c::f
+                    //     // Both would be in current_bases however the correct is a::b::c
+                    //     // the one which is more specific
+                    //     current_bases.sort_by(|b1, b2| {
+                    //         b1.matches("::").count().cmp(&b2.matches("::").count())
+                    //     });
+                    //     // For a storage variable function we would get ["name", "read"]
+                    //     let second_part = full_name
+                    //         .split_once(current_bases[0])
+                    //         .unwrap()
+                    //         .1
+                    //         .split("::")
+                    //         .collect::<Vec<&str>>();
+                    //     // We assume it's a function for a storage variable
+                    //     // however if there is an immediate submodule with a read/write/address function
+                    //     // it will be incorrectly set as Storage
+                    //     if second_part.len() == 2 {
+                        f.set_ty(Type::Storage);
+                    //     } else {
+                    //         f.set_ty(Type::Private);
+                    //     }
+                    // } else {
+                    //     // We are not in the contract module
+                    //     // set the function to private
+                    //     f.set_ty(Type::Private);
+                    //}
                 // ABI trait function for library call
                 } else if full_name.contains("LibraryDispatcherImpl::") {
                     f.set_ty(Type::AbiLibraryCall)
