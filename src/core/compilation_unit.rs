@@ -199,7 +199,7 @@ impl CompilationUnit {
                     //     // however if there is an immediate submodule with a read/write/address function
                     //     // it will be incorrectly set as Storage
                     //     if second_part.len() == 2 {
-                        f.set_ty(Type::Storage);
+                    f.set_ty(Type::Storage);
                     //     } else {
                     //         f.set_ty(Type::Private);
                     //     }
@@ -208,7 +208,7 @@ impl CompilationUnit {
                     //     // set the function to private
                     //     f.set_ty(Type::Private);
                     //}
-                // ABI trait function for library call
+                    // ABI trait function for library call
                 } else if full_name.contains("LibraryDispatcherImpl::") {
                     f.set_ty(Type::AbiLibraryCall)
                 // ABI trait function for call contract

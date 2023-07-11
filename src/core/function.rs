@@ -6,15 +6,15 @@ use crate::analysis::dataflow::AnalysisState;
 use crate::analysis::dataflow::Engine;
 use crate::analysis::reentrancy::ReentrancyAnalysis;
 use crate::utils::BUILTINS;
-use graphviz_rust::dot_generator::*;
-use graphviz_rust::dot_structures::*;
-use graphviz_rust::printer::{DotPrinter, PrinterContext};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{
     Function as SierraFunction, GenStatement, Param, Statement as SierraStatement,
 };
 use cairo_lang_sierra::program_registry::ProgramRegistry;
+use graphviz_rust::dot_generator::*;
+use graphviz_rust::dot_structures::*;
+use graphviz_rust::printer::{DotPrinter, PrinterContext};
 
 #[derive(Clone, Default)]
 pub struct Analyses {
@@ -252,8 +252,8 @@ impl Function {
         self.ty = Some(ty);
     }
 
-     /// Write to a file the function's CFG and return the filename
-     pub fn cfg_to_dot(&self, cfg: &dyn Cfg) -> String {
+    /// Write to a file the function's CFG and return the filename
+    pub fn cfg_to_dot(&self, cfg: &dyn Cfg) -> String {
         // name for now good enough
         let file_name = format!(
             "{}.dot",

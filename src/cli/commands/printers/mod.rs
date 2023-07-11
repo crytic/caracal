@@ -1,6 +1,6 @@
 use super::Cmd;
-use clap::Args;
 use caracal::printers::get_printers;
+use clap::Args;
 
 #[derive(Args, Debug)]
 pub struct PrintersArgs {}

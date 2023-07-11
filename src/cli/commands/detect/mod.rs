@@ -1,9 +1,9 @@
 use super::Cmd;
-use clap::{Args, ValueHint};
 use caracal::{
     core::core_unit::{CoreOpts, CoreUnit},
     detectors::{detector::Impact, detector::Result, get_detectors},
 };
+use clap::{Args, ValueHint};
 use std::path::PathBuf;
 
 #[derive(Args, Debug)]
