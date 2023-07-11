@@ -11,6 +11,11 @@ use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet::contract_class::ContractClass;
 
 pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
+    process::Command::new("scarb")
+        .current_dir(opts.target.as_path())
+        .arg("clean")
+        .output()?;
+
     let output = process::Command::new("scarb")
         .current_dir(opts.target.as_path())
         .arg("build")
