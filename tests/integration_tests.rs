@@ -1,5 +1,5 @@
-use starknet_static_analysis::core::core_unit::{CoreOpts, CoreUnit};
-use starknet_static_analysis::detectors::{detector::Result, get_detectors};
+use caracal::core::core_unit::{CoreOpts, CoreUnit};
+use caracal::detectors::{detector::Result, get_detectors};
 use std::env;
 use std::path::PathBuf;
 

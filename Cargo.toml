@@ -1,5 +1,6 @@
 [package]
-name = "starknet-static-analysis"
+name = "caracal"
+description = "Starknet smart contract static analysis tool"
 version = "0.1.0"
 edition = "2021"
 

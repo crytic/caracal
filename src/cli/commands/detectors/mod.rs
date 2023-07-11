@@ -1,6 +1,6 @@
 use super::Cmd;
 use clap::Args;
-use starknet_static_analysis::detectors::get_detectors;
+use caracal::detectors::get_detectors;
 
 #[derive(Args, Debug)]
 pub struct DetectorsArgs {}
