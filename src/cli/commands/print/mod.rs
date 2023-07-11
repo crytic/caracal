@@ -1,7 +1,7 @@
 use super::Cmd;
-use clap::{Args, ValueHint};
 use caracal::core::core_unit::{CoreOpts, CoreUnit};
 use caracal::printers::{get_printers, printer::Filter, printer::PrintOpts};
+use clap::{Args, ValueHint};
 use std::path::PathBuf;
 
 #[derive(Args, Debug)]

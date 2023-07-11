@@ -1,6 +1,6 @@
 use super::Cmd;
-use clap::Args;
 use caracal::detectors::get_detectors;
+use clap::Args;
 
 #[derive(Args, Debug)]
 pub struct DetectorsArgs {}
