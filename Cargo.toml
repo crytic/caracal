@@ -1,4 +1,4 @@
-[package]
+"[package]
 name = "caracal"
 description = "Starknet smart contract static analysis tool"
 version = "0.1.0"
