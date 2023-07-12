@@ -61,8 +61,8 @@ impl fmt::Display for Confidence {
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Result {
-    pub name: String,
     pub impact: Impact,
+    pub name: String,
     pub confidence: Confidence,
     pub message: String,
 }

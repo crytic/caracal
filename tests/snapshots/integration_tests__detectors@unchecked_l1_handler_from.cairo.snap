@@ -1,12 +1,11 @@
 ---
 source: tests/integration_tests.rs
 expression: results
-input_file: tests/detectors/unchecked_l1_handler_from.cairo
 ---
 [
     Result {
-        name: "unchecked-l1-handler-from",
         impact: High,
+        name: "unchecked-l1-handler-from",
         confidence: Medium,
         message: "The L1 handler function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::bad does not check the L1 from address",
     },
