@@ -78,7 +78,6 @@ impl CallgraphPrinter {
         let private_functions_call_list = f.private_functions_calls();
         let external_call_list = f.external_functions_calls();
         let library_functions_call_list = f.library_functions_calls();
-        let calling_fn_name = &f.name();
         self.create_subgraphs_and_edges(
             calling_fn_name,
             private_functions_call_list,
@@ -194,13 +193,11 @@ impl CallgraphPrinter {
                 format!("\"{}\"", &exact_func_name),
             )
         } else {
-
             let (module_name, exact_func_name) = func_name.rsplit_once("::").unwrap();
             (
                 format!("{}", &module_name),
                 format!("\"{}\"", &exact_func_name),
             )
         }
-
     }
 }
