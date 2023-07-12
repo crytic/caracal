@@ -6,6 +6,7 @@ pub mod detector;
 pub mod reentrancy;
 pub mod reentrancy_benign;
 pub mod reentrancy_events;
+pub mod unchecked_l1_handler_from;
 pub mod unenforced_view;
 pub mod unused_arguments;
 pub mod unused_events;
@@ -22,5 +23,6 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<reentrancy_benign::ReentrancyBenign>::default(),
         Box::<reentrancy::Reentrancy>::default(),
         Box::<reentrancy_events::ReentrancyEvents>::default(),
+        Box::<unchecked_l1_handler_from::UncheckedL1HandlerFrom>::default(),
     ]
 }

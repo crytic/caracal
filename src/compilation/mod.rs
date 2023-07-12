@@ -20,6 +20,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
         if let Ok(entries) = fs::read_dir(opts.target.as_path()) {
             for entry in entries.flatten() {
                 if entry.file_name() == "Scarb.toml" {
+                    println!("Compiling with Scarb.");
                     return scarb::compile(opts);
                 }
             }

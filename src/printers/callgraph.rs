@@ -14,7 +14,7 @@ pub struct CallgraphPrinter {}
 
 impl Printer for CallgraphPrinter {
     fn name(&self) -> &str {
-        "Callgraph"
+        "callgraph"
     }
     fn description(&self) -> &str {
         "Export function call graph to a .dot file"
@@ -36,11 +36,11 @@ impl Printer for CallgraphPrinter {
                     self.print_callgraph(&compilation_unit, f, &mut tracked_contracts, &mut graph)
                 }),
             }
+            // Add generated subgraphs to original digraph
             for val in tracked_contracts.values() {
                 graph.add_stmt(Stmt::Subgraph(val.clone()));
             }
-            //print results
-
+            // Write callgraph to file
             let output = graph.print(&mut PrinterContext::default());
 
             let mut f = std::fs::OpenOptions::new()
@@ -69,11 +69,12 @@ impl CallgraphPrinter {
         tracked_contracts: &mut HashMap<String, Subgraph>,
         graph: &mut Graph,
     ) {
-        //add a node/module for the current function (if it doesn't exist yet, we add module subgraph)
+        // Add a node/module for the current function (if it doesn't exist yet, we add a module subgraph)
         let calling_fn_name = &f.name();
         let mut tracked_fns: HashSet<String> = HashSet::new();
         self.add_contract_subgraphs(calling_fn_name, tracked_contracts, &mut tracked_fns);
 
+        // Iterate over function calls and create subgraphs + edges
         let private_functions_call_list = f.private_functions_calls();
         let external_call_list = f.external_functions_calls();
         let library_functions_call_list = f.library_functions_calls();
@@ -113,6 +114,7 @@ impl CallgraphPrinter {
         compilation_unit: &CompilationUnit,
         graph: &mut Graph,
     ) {
+        // Track edges in order to avoid duplicates
         let mut tracked_edges: HashSet<String> = HashSet::new();
         for call in call_list {
             if let SierraStatement::Invocation(invoc) = call {
@@ -149,9 +151,11 @@ impl CallgraphPrinter {
         let formatted_fn_name = format!("\"{}\"", func_name);
         let function_node = node!(formatted_fn_name; attr!("color","blue"),attr!("shape","square"),attr!("label",&exact_func_name));
         let contract_subgraph = tracked_contracts.get(&module_name);
+        // Update contract subgraph with new function, or generate subgraph if it doesn't exist yet
         match contract_subgraph {
             Some(subgraph) => {
                 let mut new_subgraph = subgraph.clone();
+                // Avoid adding a visited function to the subgraph again
                 if !tracked_fns.contains(func_name) {
                     new_subgraph.stmts.push(Stmt::from(function_node));
                     tracked_fns.insert(func_name.to_string());
@@ -166,16 +170,16 @@ impl CallgraphPrinter {
                 };
                 let formatted_module_name = format!("\"{}\"", name);
                 let cluster = format!("\"cluster_{}\"", &module_name);
-                let stmt = subgraph!(cluster; function_node, attr!("label",formatted_module_name)); //todo figure out why cluster attributes don't work
+                let stmt = subgraph!(cluster; function_node, attr!("label",formatted_module_name));
                 tracked_fns.insert(func_name.to_string());
                 tracked_contracts.insert(module_name.clone(), stmt);
             }
         }
     }
 
-    //helper to get node_id. Returns function name in quotes but module as raw name
+    // Helper to get node_id. Returns function name in quotes but module as raw name
     fn get_names(&self, func_name: &str) -> (String, String) {
-        //handle the case of generics
+        // Handle the case of generics
         if func_name.contains("<") {
             let original_name = func_name
                 .rsplit_once("<")
@@ -184,17 +188,19 @@ impl CallgraphPrinter {
                 .strip_suffix("::")
                 .unwrap();
             let (module_name, exact_func_name) = original_name.rsplit_once("::").unwrap();
+            // Leave module name w/o quotes, we'll modify it when computing the subgraph name
             (
                 format!("{}", &module_name),
                 format!("\"{}\"", &exact_func_name),
             )
         } else {
+
             let (module_name, exact_func_name) = func_name.rsplit_once("::").unwrap();
             (
                 format!("{}", &module_name),
                 format!("\"{}\"", &exact_func_name),
             )
         }
-        //leave module name w/o quotes, we'll modify it when computing subgraph name
+
     }
 }
