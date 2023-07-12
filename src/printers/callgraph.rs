@@ -148,10 +148,10 @@ impl CallgraphPrinter {
         let (module_name, exact_func_name) = self.get_names(func_name);
         let formatted_fn_name = format!("\"{}\"", func_name);
         let function_node = node!(formatted_fn_name; attr!("color","blue"),attr!("shape","square"),attr!("label",&exact_func_name));
-        let contract_subgraph = tracked_contracts.get_key_value(&module_name);
+        let contract_subgraph = tracked_contracts.get(&module_name);
         match contract_subgraph {
             Some(subgraph) => {
-                let mut new_subgraph = subgraph.1.clone();
+                let mut new_subgraph = subgraph.clone();
                 if !tracked_fns.contains(func_name) {
                     new_subgraph.stmts.push(Stmt::from(function_node));
                     tracked_fns.insert(func_name.to_string());
