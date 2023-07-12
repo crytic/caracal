@@ -152,6 +152,7 @@ impl CompilationUnit {
                             }
                         }
                     }
+                }
             } else if l1_handler_functions.contains(&full_name) {
                 f.set_ty(Type::L1Handler);
             } else if full_name.ends_with("::address")
