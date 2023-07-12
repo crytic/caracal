@@ -108,53 +108,54 @@ impl UncheckedL1HandlerFrom {
                 }
             });
 
-        let from_checked_in_private_functions = function.private_functions_calls().any(|s| {
-            if let GenStatement::Invocation(invoc) = s {
-                let lib_func = compilation_unit
-                    .registry()
-                    .get_libfunc(&invoc.libfunc_id)
-                    .expect("Library function not found in the registry");
+        let from_checked_in_private_functions = from_checked
+            || function.private_functions_calls().any(|s| {
+                if let GenStatement::Invocation(invoc) = s {
+                    let lib_func = compilation_unit
+                        .registry()
+                        .get_libfunc(&invoc.libfunc_id)
+                        .expect("Library function not found in the registry");
 
-                if let CoreConcreteLibfunc::FunctionCall(f_called) = lib_func {
-                    let private_function = compilation_unit
-                        .function_by_name(f_called.function.id.debug_name.as_ref().unwrap())
-                        .unwrap();
-                    if checked_private_functions.contains(&private_function.name()) {
-                        return false;
+                    if let CoreConcreteLibfunc::FunctionCall(f_called) = lib_func {
+                        let private_function = compilation_unit
+                            .function_by_name(f_called.function.id.debug_name.as_ref().unwrap())
+                            .unwrap();
+                        if checked_private_functions.contains(&private_function.name()) {
+                            return false;
+                        }
+
+                        let taint = compilation_unit.get_taint(&function.name()).unwrap();
+
+                        let sinks: HashSet<WrapperVariable> = invoc
+                            .args
+                            .iter()
+                            .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                            .collect();
+
+                        let from_tainted_args: HashSet<WrapperVariable> = from_tainted_args
+                            .iter()
+                            .flat_map(|source| taint.taints_any_sinks_variable(source, &sinks))
+                            .map(|sink| {
+                                WrapperVariable::new(
+                                    private_function.name(),
+                                    VarId::new(sink.variable().id - invoc.args[0].id),
+                                )
+                            })
+                            .collect();
+
+                        checked_private_functions.insert(private_function.name());
+                        return self.is_from_checked_in_function(
+                            &from_tainted_args,
+                            compilation_unit,
+                            private_function,
+                            checked_private_functions,
+                        );
                     }
-
-                    let taint = compilation_unit.get_taint(&function.name()).unwrap();
-
-                    let sinks: HashSet<WrapperVariable> = invoc
-                        .args
-                        .iter()
-                        .map(|v| WrapperVariable::new(function.name(), v.clone()))
-                        .collect();
-
-                    let from_tainted_args: HashSet<WrapperVariable> = from_tainted_args
-                        .iter()
-                        .flat_map(|source| taint.taints_any_sinks_variable(source, &sinks))
-                        .map(|sink| {
-                            WrapperVariable::new(
-                                private_function.name(),
-                                VarId::new(sink.variable().id - invoc.args[0].id),
-                            )
-                        })
-                        .collect();
-
-                    checked_private_functions.insert(private_function.name());
-                    return self.is_from_checked_in_function(
-                        &from_tainted_args,
-                        compilation_unit,
-                        private_function,
-                        checked_private_functions,
-                    );
                 }
-            }
-            false
-        });
+                false
+            });
 
-        from_checked || from_checked_in_private_functions
+        from_checked_in_private_functions
     }
 
     fn is_felt252_is_zero_arg_taintaed_by_from_address(
