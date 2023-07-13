@@ -165,6 +165,7 @@ impl Detector for UnusedReturn {
 }
 
 impl<'a> UnusedReturn {
+    #[allow(clippy::too_many_arguments)]
     fn iterate_struct_deconstruct(
         &self,
         compilation_unit: &'a CompilationUnit,

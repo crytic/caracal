@@ -30,10 +30,10 @@ impl Printer for CallgraphPrinter {
             let mut graph = graph!( di id!(format!("\"{}\"",&module_name)));
             match opts.filter {
                 Filter::All => compilation_unit.functions().for_each(|f| {
-                    self.print_callgraph(&compilation_unit, f, &mut tracked_contracts, &mut graph)
+                    self.print_callgraph(compilation_unit, f, &mut tracked_contracts, &mut graph)
                 }),
                 Filter::UserFunctions => compilation_unit.functions_user_defined().for_each(|f| {
-                    self.print_callgraph(&compilation_unit, f, &mut tracked_contracts, &mut graph)
+                    self.print_callgraph(compilation_unit, f, &mut tracked_contracts, &mut graph)
                 }),
             }
             // Add generated subgraphs to original digraph
@@ -50,7 +50,7 @@ impl Printer for CallgraphPrinter {
                 .open(format!("{}.dot", module_name))
                 .expect("Error when creating file");
 
-            f.write_all(&output.as_bytes()).unwrap();
+            f.write_all(output.as_bytes()).unwrap();
             let message = format!("Call graph for module {}", &module_name);
             results.push(Result {
                 name: self.name().to_string(),
@@ -179,9 +179,9 @@ impl CallgraphPrinter {
     // Helper to get node_id. Returns function name in quotes but module as raw name
     fn get_names(&self, func_name: &str) -> (String, String) {
         // Handle the case of generics
-        if func_name.contains("<") {
+        if func_name.contains('<') {
             let original_name = func_name
-                .rsplit_once("<")
+                .rsplit_once('<')
                 .unwrap()
                 .0
                 .strip_suffix("::")
@@ -189,13 +189,13 @@ impl CallgraphPrinter {
             let (module_name, exact_func_name) = original_name.rsplit_once("::").unwrap();
             // Leave module name w/o quotes, we'll modify it when computing the subgraph name
             (
-                format!("{}", &module_name),
+                module_name.to_string(),
                 format!("\"{}\"", &exact_func_name),
             )
         } else {
             let (module_name, exact_func_name) = func_name.rsplit_once("::").unwrap();
             (
-                format!("{}", &module_name),
+                module_name.to_string(),
                 format!("\"{}\"", &exact_func_name),
             )
         }
