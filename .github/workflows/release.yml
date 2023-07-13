@@ -20,17 +20,17 @@ jobs:
               platform: windows
               target: x86_64-pc-windows-msvc
    
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.job.os }}
 
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.job.target }}
 
       - name: Archive binaries
         id: binaries
         env:
-            PLATFORM_NAME: ${{ matrix.platform }}
+            PLATFORM_NAME: ${{ matrix.job.platform }}
         run: |
             if [ "$PLATFORM_NAME" == "linux" ]; then
               tar -czvf "caracal-${GITHUB_REF_NAME}-${PLATFORM_NAME}.tar.gz" -C ./target/${TARGET}/release caracal
