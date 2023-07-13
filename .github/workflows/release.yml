@@ -31,6 +31,7 @@ jobs:
         id: binaries
         env:
             PLATFORM_NAME: ${{ matrix.job.platform }}
+            TARGET: ${{ matrix.job.target }}
         run: |
             if [ "$PLATFORM_NAME" == "linux" ]; then
               tar -czvf "caracal-${GITHUB_REF_NAME}-${PLATFORM_NAME}.tar.gz" -C ./target/${TARGET}/release caracal
