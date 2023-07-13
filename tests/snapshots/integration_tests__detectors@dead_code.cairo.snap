@@ -1,12 +1,11 @@
 ---
 source: tests/integration_tests.rs
 expression: results
-input_file: tests/detectors/dead_code.cairo
 ---
 [
     Result {
-        name: "dead-code",
         impact: Low,
+        name: "dead-code",
         confidence: Medium,
         message: "Function add_2 defined in dead_code::dead_code::DeadCode is never used",
     },

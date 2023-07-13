@@ -11,6 +11,11 @@ use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet::contract_class::ContractClass;
 
 pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
+    process::Command::new("scarb")
+        .current_dir(opts.target.as_path())
+        .arg("clean")
+        .output()?;
+
     let output = process::Command::new("scarb")
         .current_dir(opts.target.as_path())
         .arg("build")
@@ -54,7 +59,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
         let debug_info;
 
         if contract_class.sierra_program_debug_info.is_none() {
-            println!("Skipping analysing file {}. Debug info not found. Ensure in Scarb.toml you have \n[cairo]\nsierra-replace-ids = true", sierra_file.to_str().unwrap());
+            println!("Skipping analysing file {}. Debug info not found. Ensure in Scarb.toml you have \n[cairo]\nsierra-replace-ids = true\n", sierra_file.to_str().unwrap());
             continue;
         } else {
             debug_info = contract_class.sierra_program_debug_info.unwrap();
@@ -62,7 +67,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
                 && debug_info.type_names.is_empty()
                 && debug_info.user_func_names.is_empty()
             {
-                println!("Skipping analysing file {}. Debug info empty. Ensure in Scarb.toml you have \n[cairo]\nsierra-replace-ids = true", sierra_file.to_str().unwrap());
+                println!("Skipping analysing file {}. Debug info not found. If the file has code ensure in Scarb.toml you have \n[cairo]\nsierra-replace-ids = true\n", sierra_file.to_str().unwrap());
                 continue;
             }
         }

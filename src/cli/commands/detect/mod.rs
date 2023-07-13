@@ -4,7 +4,9 @@ use caracal::{
     detectors::{detector::Impact, detector::Result, get_detectors},
 };
 use clap::{Args, ValueHint};
+use std::io::Write;
 use std::path::PathBuf;
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 #[derive(Args, Debug)]
 pub struct DetectArgs {
@@ -85,7 +87,40 @@ impl Cmd for DetectArgs {
             .collect::<Vec<Result>>();
         results.sort();
 
-        results.iter().for_each(|r| println!("{r}"));
+        let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+        for r in results.iter() {
+            match r.impact {
+                Impact::High => {
+                    stdout
+                        .set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_intense(true))?;
+                    writeln!(&mut stdout, "{}", r)?;
+                }
+                Impact::Medium => {
+                    stdout.set_color(
+                        ColorSpec::new()
+                            .set_fg(Some(Color::Yellow))
+                            .set_intense(true),
+                    )?;
+                    writeln!(&mut stdout, "{}", r)?;
+                }
+                Impact::Low => {
+                    stdout.set_color(
+                        ColorSpec::new()
+                            .set_fg(Some(Color::Green))
+                            .set_intense(true),
+                    )?;
+                    writeln!(&mut stdout, "{}", r)?;
+                }
+                Impact::Informational => {
+                    stdout
+                        .set_color(ColorSpec::new().set_fg(Some(Color::Cyan)).set_intense(true))?;
+                    writeln!(&mut stdout, "{}", r)?;
+                }
+            }
+        }
+
+        stdout.reset()?;
 
         Ok(())
     }
