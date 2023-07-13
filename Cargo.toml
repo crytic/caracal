@@ -7,15 +7,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = { version = "1.0" }
-clap = { version = "4.1" }
-serde_json = { version = "1.0" }
-num-bigint = { version = "0.4" }
-num-traits = { version = "0.2" }
-once_cell = { version = "1.17" }
-smol_str = { version = "0.2" }
-num-integer = { version = "0.1" }
-termcolor = { version = "1.2" }
+anyhow = "1.0"
+clap = "4.1"
+serde_json = "1.0"
+num-bigint = "0.4"
+num-traits = "0.2"
+once_cell =  "1.17"
+smol_str = "0.2"
+num-integer = "0.1"
+termcolor = "1.2"
+graphviz-rust = "0.6.2"
 
 cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", tag = "v1.1.1" }
 cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", tag = "v1.1.1" }
