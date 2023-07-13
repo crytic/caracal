@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement, StatementIdx};
 
 #[derive(Default)]
-pub struct UnusedReturn {}
+pub struct UnusedReturn;
 
 impl Detector for UnusedReturn {
     fn name(&self) -> &str {
