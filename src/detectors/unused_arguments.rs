@@ -4,6 +4,8 @@ use crate::utils::number_to_ordinal;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::program::Statement as SierraStatement;
 
+// Note: It doesn't work correctly when arguments are passed by reference
+
 #[derive(Default)]
 pub struct UnusedArguments {}
 
@@ -17,7 +19,7 @@ impl Detector for UnusedArguments {
     }
 
     fn confidence(&self) -> Confidence {
-        Confidence::High
+        Confidence::Medium
     }
 
     fn impact(&self) -> Impact {
