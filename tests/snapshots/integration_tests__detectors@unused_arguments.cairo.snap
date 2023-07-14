@@ -6,19 +6,19 @@ expression: results
     Result {
         impact: Low,
         name: "unused-arguments",
-        confidence: High,
+        confidence: Medium,
         message: "The 1st argument in unused_arguments::unused_arguments::UnusedArguments::unused_2 is never used",
     },
     Result {
         impact: Low,
         name: "unused-arguments",
-        confidence: High,
+        confidence: Medium,
         message: "The 2nd argument in unused_arguments::unused_arguments::UnusedArguments::unused_1 is never used",
     },
     Result {
         impact: Low,
         name: "unused-arguments",
-        confidence: High,
+        confidence: Medium,
         message: "The 2nd argument in unused_arguments::unused_arguments::UnusedArguments::unused_2 is never used",
     },
 ]
