@@ -74,7 +74,7 @@ Num | Detector | What it Detects | Impact | Confidence
 4 | `unused-events` | Events defined but not emitted | Medium | Medium
 5 | `unused-return` | Unused return values | Medium | Medium
 6 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium
-7 | `unused-arguments` | Unused arguments | Low | High
+7 | `unused-arguments` | Unused arguments | Low | Medium
 8 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium
 9 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium
 10 | `dead-code` | Private functions never used | Low | Medium
