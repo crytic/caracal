@@ -1,0 +1,60 @@
+--- 
+body: 
+  - 
+    attributes: 
+      value: |
+          Please check the issues tab to avoid duplicates. 
+          Thanks for helping make Caracal the best it can be!
+    type: markdown
+  - 
+    attributes: 
+      label: "What bug did Caracal miss and which detector did you anticipate would catch it?"
+    id: what-happened
+    type: textarea
+    validations: 
+      required: true
+  - 
+    attributes:
+      label: Frequency
+      description: How often do you run across this false negative?
+      options:
+        - Very Frequently
+        - Occasionally 
+        - Rarely
+        - Not sure
+    id: frequency
+    type: dropdown
+    validations:
+      required: true
+  - 
+    attributes: 
+      description: "It can be a github repo or code snippet."
+      label: "Code example to reproduce the issue:"
+    id: reproduce
+    type: textarea
+    validations: 
+      required: true
+  - 
+    attributes: 
+      description: |
+          What version of caracal are you running? 
+          Run `caracal --version`
+      label: "Version:"
+    id: version
+    type: textarea
+    validations: 
+      required: true
+  - 
+    attributes: 
+      description: |
+          Please copy and paste the result output. This 
+          will be automatically formatted into code, so no need for backticks.
+      render: shell
+      label: "Relevant log output:"
+    id: logs
+    type: textarea
+description: "Caracal missed a bug it should find."
+labels: 
+  - false-negative
+name: False Negative
+title: "[False Negative]: "

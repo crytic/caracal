@@ -1,11 +1,11 @@
 ---
 source: tests/integration_tests.rs
-expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
+expression: results
 ---
 [
     Result {
-        name: "unused-events",
         impact: Medium,
+        name: "unused-events",
         confidence: Medium,
         message: "Event MyUnusedEvent defined in unused_events::unused_events::UnusedEvents is never emitted",
     },

@@ -1,7 +1,7 @@
 use super::Cmd;
+use caracal::core::core_unit::{CoreOpts, CoreUnit};
+use caracal::printers::{get_printers, printer::Filter, printer::PrintOpts};
 use clap::{Args, ValueHint};
-use starknet_static_analysis::core::core_unit::{CoreOpts, CoreUnit};
-use starknet_static_analysis::printers::{get_printers, printer::Filter, printer::PrintOpts};
 use std::path::PathBuf;
 
 #[derive(Args, Debug)]
@@ -20,7 +20,7 @@ pub struct PrintArgs {
 
     /// Which printer to use
     #[arg(short, long)]
-    what: String,
+    printer: String,
 }
 
 impl From<&PrintArgs> for CoreOpts {
@@ -45,7 +45,7 @@ impl Cmd for PrintArgs {
         let printers = get_printers();
         let printer = printers
             .iter()
-            .find(|printer| printer.name() == self.what)
+            .find(|printer| printer.name() == self.printer)
             .expect("Invalid printer provided");
 
         let core = CoreUnit::new(self.into())?;

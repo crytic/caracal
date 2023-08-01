@@ -58,6 +58,10 @@ impl CompilationUnit {
         })
     }
 
+    pub fn function_by_name(&self, name: &str) -> Option<&Function> {
+        self.functions.iter().find(|f| f.name().as_str() == name)
+    }
+
     pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
         &self.registry
     }
@@ -103,136 +107,90 @@ impl CompilationUnit {
     }
 
     fn set_functions_type(&mut self) {
-        // Get the possible base modules
-        let base_modules: HashSet<String> = self
-            .sierra_program
-            .funcs
-            .iter()
-            .filter(|f| f.id.to_string().contains("::__external::"))
-            .map(|f| {
-                f.id.to_string()
-                    .split_once("__external::")
-                    .unwrap()
-                    .0
-                    .to_owned()
-            })
-            .collect();
+        let mut external_functions = HashSet::new();
+        let mut constructors = HashSet::new();
+        let mut l1_handler_functions = HashSet::new();
 
-        if !base_modules.is_empty() {
-            let mut external_functions = HashSet::new();
-            let mut constructors = HashSet::new();
-            let mut l1_handler_functions = HashSet::new();
-
-            // Gather all the external/l1_handler functions and the constructor of each contract
-            for f in self.sierra_program.funcs.iter() {
-                let full_name = f.id.to_string();
-                if full_name.contains("::__external::") {
-                    external_functions.insert(full_name.replace("__external::", ""));
-                } else if full_name.contains("::__constructor::") {
-                    constructors.insert(full_name.replace("__constructor::", ""));
-                } else if full_name.contains("::__l1_handler::") {
-                    l1_handler_functions.insert(full_name.replace("__l1_handler::", ""));
-                }
+        // Gather all the external/l1_handler functions and the constructor of each contract
+        for f in self.sierra_program.funcs.iter() {
+            let full_name = f.id.to_string();
+            if full_name.contains("::__external::") {
+                external_functions.insert(full_name.replace("__external::", ""));
+            } else if full_name.contains("::__constructor::") {
+                constructors.insert(full_name.replace("__constructor::", ""));
+            } else if full_name.contains("::__l1_handler::") {
+                l1_handler_functions.insert(full_name.replace("__l1_handler::", ""));
             }
+        }
 
-            // Set the function type
-            for f in self.functions.iter_mut() {
-                let full_name = f.name();
+        // Set the function type
+        for f in self.functions.iter_mut() {
+            let full_name = f.name();
 
-                if full_name.starts_with("core::") {
-                    f.set_ty(Type::Core);
-                } else if full_name.contains("::__external::")
-                    || full_name.contains("::__constructor::")
-                    || full_name.contains("::__l1_handler::")
-                {
-                    f.set_ty(Type::Wrapper);
-                } else if constructors.contains(&full_name) {
-                    // Constructor
-                    f.set_ty(Type::Constructor);
-                } else if external_functions.contains(&full_name) {
-                    // External function, we need to check in the abi if it's view or external
-                    let function_name = full_name.rsplit_once("::").unwrap().1;
+            if full_name.starts_with("core::") {
+                f.set_ty(Type::Core);
+            } else if full_name.contains("::__external::")
+                || full_name.contains("::__constructor::")
+                || full_name.contains("::__l1_handler::")
+            {
+                f.set_ty(Type::Wrapper);
+            } else if constructors.contains(&full_name) {
+                // Constructor
+                f.set_ty(Type::Constructor);
+            } else if external_functions.contains(&full_name) {
+                // External function, we need to check in the abi if it's view or external
+                let function_name = full_name.rsplit_once("::").unwrap().1;
 
-                    for item in self.abi.items.iter() {
-                        if let AbiFunction(function) = item {
-                            if function.name == function_name {
-                                match function.state_mutability {
-                                    cairo_lang_starknet::abi::StateMutability::External => {
-                                        f.set_ty(Type::External);
-                                        break;
-                                    }
-                                    cairo_lang_starknet::abi::StateMutability::View => {
-                                        f.set_ty(Type::View);
-                                        break;
-                                    }
+                for item in self.abi.items.iter() {
+                    if let AbiFunction(function) = item {
+                        if function.name == function_name {
+                            match function.state_mutability {
+                                cairo_lang_starknet::abi::StateMutability::External => {
+                                    f.set_ty(Type::External);
+                                    break;
+                                }
+                                cairo_lang_starknet::abi::StateMutability::View => {
+                                    f.set_ty(Type::View);
+                                    break;
                                 }
                             }
                         }
                     }
-                } else if l1_handler_functions.contains(&full_name) {
-                    f.set_ty(Type::L1Handler);
-                } else if full_name.ends_with("::InternalContractStateImpl::address")
-                    || full_name.ends_with("::InternalContractStateImpl::read")
-                    || full_name.ends_with("::InternalContractStateImpl::write")
-                {
-                    // We split by the base_module if it's not Some then we are not in the contract module
-                    // otherwise it's a storage variable function e.g. erc20::erc20::ERC20::name::InternalContractStateImpl::read
-                    // Get the possible bases for the current function
-                    let mut current_bases: Vec<&String> = base_modules
-                        .iter()
-                        .filter(|base| full_name.split_once(*base).is_some())
-                        .collect();
+                }
+            } else if l1_handler_functions.contains(&full_name) {
+                f.set_ty(Type::L1Handler);
+            } else if full_name.ends_with("::address")
+                || full_name.ends_with("::read")
+                || full_name.ends_with("::write")
+            {
+                // A user defined function named address/read/write can be incorrectly set to Storage
+                f.set_ty(Type::Storage);
+            // ABI trait function for library call
+            } else if full_name.contains("LibraryDispatcherImpl::") {
+                f.set_ty(Type::AbiLibraryCall)
+            // ABI trait function for call contract
+            } else if full_name.contains("DispatcherImpl::") {
+                f.set_ty(Type::AbiCallContract)
+            } else {
+                // Event or private function
+                // Could be an event or a private function in the contract's module
+                let possible_event_name = full_name.rsplit_once("::").unwrap().1;
 
-                    if !current_bases.is_empty() {
-                        // Need this in case there are submodules with the same function name
-                        // a::b::f
-                        // a::b::c::f
-                        // Both would be in current_bases however the correct is a::b::c
-                        // the one which is more specific
-                        current_bases.sort_by(|b1, b2| {
-                            b1.matches("::").count().cmp(&b2.matches("::").count())
-                        });
-                        // For a storage variable function we would get ["name", "InternalContractStateImpl", "read"]
-                        let full_name_splitted = full_name
-                            .split_once(current_bases[0])
-                            .unwrap()
-                            .1
-                            .split("::")
-                            .collect::<Vec<&str>>();
-                        // We assume it's a function for a storage variable
-                        // however if there is an immediate submodule with a read/write/address function
-                        // it will be incorrectly set as Storage
-                        if full_name_splitted.len() == 3
-                            && full_name_splitted[1] == "InternalContractStateImpl"
-                        {
-                            f.set_ty(Type::Storage);
-                        } else {
-                            f.set_ty(Type::Private);
+                let mut found = false;
+                for item in self.abi.items.iter() {
+                    if let Event(e) = item {
+                        if e.name == possible_event_name {
+                            f.set_ty(Type::Event);
+                            found = true;
+                            break;
                         }
-                    } else {
-                        // We are not in the contract module
-                        // set the function to private
-                        f.set_ty(Type::Private);
                     }
-                // ABI trait function for library call
-                } else if full_name.contains("::LibraryDispatcherImpl::") {
-                    f.set_ty(Type::AbiLibraryCall)
-                // ABI trait function for call contract
-                } else if full_name.contains("::DispatcherImpl::") {
-                    f.set_ty(Type::AbiCallContract)
-                } else if full_name.contains("::ContractStateEventEmitter::emit::") {
-                    // Event
-                    f.set_ty(Type::Event);
-                } else {
+                }
+
+                if !found {
                     f.set_ty(Type::Private);
                 }
             }
-        } else {
-            // There aren't external functions could be a standard cairo file not a smart contract
-            // set all of them to private but for now we don't handle standard cairo in the perfect way
-            self.functions
-                .iter_mut()
-                .for_each(|f| f.set_ty(Type::Private));
         }
     }
 
@@ -282,13 +240,18 @@ impl CompilationUnit {
 
         self.set_functions_type();
 
-        let mut functions_copy = Vec::with_capacity(self.functions.len());
-        functions_copy.clone_from(&self.functions);
-
         // Analyze each function
+        let mut functions = Vec::with_capacity(self.functions.len());
+        functions.clone_from(&self.functions);
         self.functions
             .iter_mut()
-            .for_each(|f| f.analyze(&functions_copy, &self.registry));
+            .for_each(|f| f.analyze(&functions, &self.registry));
+
+        // Run analyses on each function after all the functions have been analyzed
+        functions.clone_from(&self.functions);
+        self.functions
+            .iter_mut()
+            .for_each(|f| f.run_analyses(&functions, &self.registry));
 
         // Compute taints
         self.functions.iter().for_each(|f| {

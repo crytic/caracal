@@ -10,7 +10,7 @@ use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement, StatementIdx};
 
 #[derive(Default)]
-pub struct UnusedReturn {}
+pub struct UnusedReturn;
 
 impl Detector for UnusedReturn {
     fn name(&self) -> &str {
@@ -165,6 +165,7 @@ impl Detector for UnusedReturn {
 }
 
 impl<'a> UnusedReturn {
+    #[allow(clippy::too_many_arguments)]
     fn iterate_struct_deconstruct(
         &self,
         compilation_unit: &'a CompilationUnit,

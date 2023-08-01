@@ -1,24 +1,24 @@
 ---
 source: tests/integration_tests.rs
-expression: "get_detectors().iter().flat_map(|d| d.run(&core)).collect::<Vec<Result>>()"
+expression: results
 ---
 [
     Result {
-        name: "unused-arguments",
         impact: Low,
-        confidence: High,
-        message: "The 2nd argument in unused_arguments::unused_arguments::UnusedArguments::unused_1 is never used",
-    },
-    Result {
         name: "unused-arguments",
-        impact: Low,
-        confidence: High,
+        confidence: Medium,
         message: "The 1st argument in unused_arguments::unused_arguments::UnusedArguments::unused_2 is never used",
     },
     Result {
-        name: "unused-arguments",
         impact: Low,
-        confidence: High,
+        name: "unused-arguments",
+        confidence: Medium,
+        message: "The 2nd argument in unused_arguments::unused_arguments::UnusedArguments::unused_1 is never used",
+    },
+    Result {
+        impact: Low,
+        name: "unused-arguments",
+        confidence: Medium,
         message: "The 2nd argument in unused_arguments::unused_arguments::UnusedArguments::unused_2 is never used",
     },
 ]
