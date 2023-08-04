@@ -1,6 +1,7 @@
 ---
 source: tests/integration_tests.rs
 expression: results
+input_file: tests/detectors/reentrancy.cairo
 ---
 [
     Result {
@@ -32,6 +33,12 @@ expression: results
         name: "reentrancy",
         confidence: Medium,
         message: "Reentrancy in reentrancy::reentrancy::TestContract::bad4\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([15], [16], [17], [18]) -> ([12], [13], [14]) done in reentrancy::reentrancy::TestContract::internal_ext_call2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::write>([15], [16], [17]) -> ([12], [13], [14]) in reentrancy::reentrancy::TestContract::bad4.",
+    },
+    Result {
+        impact: Medium,
+        name: "reentrancy",
+        confidence: Medium,
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad5\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([8], [9], [10], [11]) -> ([5], [6], [7]) done in bad5[expr6]\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::write>([24], [25], [26]) -> ([21], [22], [23]) in reentrancy::reentrancy::TestContract::bad5.",
     },
     Result {
         impact: Low,

@@ -58,6 +58,16 @@ mod TestContract {
         a::write(4);
     }
 
+    #[external]
+    fn bad5(address: ContractAddress) {
+        let a = a::read();
+        loop {
+            IAnotherContractDispatcher { contract_address: address }.foo(a);
+            break ();
+        };
+        a::write(4);
+    }
+
     fn internal_ext_call2(address: ContractAddress) {
         let a = a::read();
         IAnotherContractDispatcher { contract_address: address }.foo(4);
