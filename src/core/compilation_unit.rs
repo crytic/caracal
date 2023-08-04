@@ -53,7 +53,12 @@ impl CompilationUnit {
         self.functions.iter().filter(|f| {
             matches!(
                 f.ty(),
-                Type::Constructor | Type::External | Type::View | Type::Private | Type::L1Handler
+                Type::Constructor
+                    | Type::External
+                    | Type::View
+                    | Type::Private
+                    | Type::L1Handler
+                    | Type::Loop
             )
         })
     }
@@ -169,22 +174,26 @@ impl CompilationUnit {
                 f.set_ty(Type::AbiCallContract)
             } else {
                 // Event or private function
-                // Could be an event or a private function in the contract's module
-                let possible_event_name = full_name.rsplit_once("::").unwrap().1;
+                // Could be an event a loop function or a private function in the contract's module
+                if full_name.ends_with(']') {
+                    f.set_ty(Type::Loop);
+                } else {
+                    let possible_event_name = full_name.rsplit_once("::").unwrap().1;
 
-                let mut found = false;
-                for item in self.abi.items.iter() {
-                    if let Event(e) = item {
-                        if e.name == possible_event_name {
-                            f.set_ty(Type::Event);
-                            found = true;
-                            break;
+                    let mut found = false;
+                    for item in self.abi.items.iter() {
+                        if let Event(e) = item {
+                            if e.name == possible_event_name {
+                                f.set_ty(Type::Event);
+                                found = true;
+                                break;
+                            }
                         }
                     }
-                }
 
-                if !found {
-                    f.set_ty(Type::Private);
+                    if !found {
+                        f.set_ty(Type::Private);
+                    }
                 }
             }
         }
@@ -285,12 +294,16 @@ impl CompilationUnit {
         while changed {
             changed = false;
 
-            for calling_function in self
-                .functions
-                .iter()
-                .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler | Type::Private))
-            {
-                for function_call in calling_function.private_functions_calls() {
+            for calling_function in self.functions.iter().filter(|f| {
+                matches!(
+                    f.ty(),
+                    Type::External | Type::L1Handler | Type::Private | Type::Loop
+                )
+            }) {
+                for function_call in calling_function
+                    .private_functions_calls()
+                    .chain(calling_function.loop_functions_calls())
+                {
                     // It will always be an invocation
                     if let GenStatement::Invocation(invoc) = function_call {
                         // The core lib func instance

@@ -47,6 +47,9 @@ pub enum Type {
     AbiLibraryCall,
     /// L1 handler function
     L1Handler,
+    /// Compiler generated function when a loop is present in a user defined function
+    /// Loop generate functions in core library are still Core type
+    Loop,
 }
 
 #[derive(Clone)]
@@ -73,6 +76,8 @@ pub struct Function {
     external_functions_calls: Vec<SierraStatement>,
     /// Library functions called through an ABI trait (NOTE it doesn't have library functions called using the syscall directly)
     library_functions_calls: Vec<SierraStatement>,
+    /// Loop functions called
+    loop_functions_calls: Vec<SierraStatement>,
     /// Analyses results
     analyses: Analyses,
 }
@@ -91,6 +96,7 @@ impl Function {
             events_emitted: Vec::new(),
             external_functions_calls: Vec::new(),
             library_functions_calls: Vec::new(),
+            loop_functions_calls: Vec::new(),
             analyses: Analyses::default(),
         }
     }
@@ -130,6 +136,10 @@ impl Function {
 
     pub fn library_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
         self.library_functions_calls.iter()
+    }
+
+    pub fn loop_functions_calls(&self) -> impl Iterator<Item = &SierraStatement> {
+        self.loop_functions_calls.iter()
     }
 
     pub fn analyses(&self) -> &Analyses {
@@ -226,6 +236,7 @@ impl Function {
                                 Type::AbiLibraryCall => {
                                     self.library_functions_calls.push(s.clone())
                                 }
+                                Type::Loop => self.loop_functions_calls.push(s.clone()),
                                 _ => (),
                             }
                             break;
