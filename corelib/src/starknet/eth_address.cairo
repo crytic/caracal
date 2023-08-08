@@ -6,7 +6,7 @@ use traits::{Into, TryInto};
 use zeroable::Zeroable;
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, starknet::Store)]
 struct EthAddress {
     address: felt252, 
 }
@@ -17,7 +17,7 @@ impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
         if self.into() < ETH_ADDRESS_BOUND {
             Option::Some(EthAddress { address: self })
         } else {
-            Option::None(())
+            Option::None
         }
     }
 }
