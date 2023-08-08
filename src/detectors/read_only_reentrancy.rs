@@ -71,7 +71,7 @@ impl Detector for ReadOnlyReentrancy {
                                     .0
                                     .to_string();
 
-                                    if vars_read.contains_key(&written_variable_name) {
+                                if vars_read.contains_key(&written_variable_name) {
                                     for view_function in
                                         vars_read.get(&written_variable_name).unwrap()
                                     {
