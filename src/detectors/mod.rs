@@ -3,6 +3,7 @@ use self::detector::Detector;
 pub mod controlled_library_call;
 pub mod dead_code;
 pub mod detector;
+pub mod read_only_reentrancy;
 pub mod reentrancy;
 pub mod reentrancy_benign;
 pub mod reentrancy_events;
@@ -23,6 +24,7 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<reentrancy_benign::ReentrancyBenign>::default(),
         Box::<reentrancy::Reentrancy>::default(),
         Box::<reentrancy_events::ReentrancyEvents>::default(),
+        Box::<read_only_reentrancy::ReadOnlyReentrancy>::default(),
         Box::<unchecked_l1_handler_from::UncheckedL1HandlerFrom>::default(),
     ]
 }
