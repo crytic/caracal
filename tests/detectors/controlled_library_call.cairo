@@ -1,21 +1,24 @@
-#[abi]
-trait IAnotherContract {
-    fn foo(a: u128) -> u128;
+#[starknet::interface]
+trait IAnotherContract<T> {
+    fn foo(ref self: T, a: u128) -> u128;
 }
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use super::IAnotherContractDispatcherTrait;
     use super::IAnotherContractLibraryDispatcher;
     use starknet::class_hash::ClassHash;
 
-    #[external]
-    fn bad1(class_hash: ClassHash) -> u128 {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn bad1(ref self: ContractState, class_hash: ClassHash) -> u128 {
         IAnotherContractLibraryDispatcher { class_hash: class_hash }.foo(2_u128)
     }
 
-    #[external]
-    fn bad2(class_hash: ClassHash) -> u128 {
+    #[external(v0)]
+    fn bad2(ref self: ContractState, class_hash: ClassHash) -> u128 {
         internal_lib_call(class_hash)
     }
 
@@ -23,8 +26,8 @@ mod TestContract {
         IAnotherContractLibraryDispatcher { class_hash: class_hash }.foo(2_u128)
     }
 
-    #[external]
-    fn good() -> u128 {
+    #[external(v0)]
+    fn good(ref self: ContractState) -> u128 {
         IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(2_u128)
     }
 

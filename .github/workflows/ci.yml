@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - cairo-comp-1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

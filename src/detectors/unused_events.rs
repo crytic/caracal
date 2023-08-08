@@ -1,9 +1,12 @@
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::core::core_unit::CoreUnit;
-use crate::core::function::Type;
+use crate::utils::filter_builtins_from_signature;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::program::Statement as SierraStatement;
 use std::collections::HashSet;
+
+// Note: It's possible to have FPs when the long syntax to emit events is used
+// e.g. self.emit(Event::MyUsedEvent(MyUsedEvent { value: amount }));
 
 #[derive(Default)]
 pub struct UnusedEvents {}
@@ -30,11 +33,7 @@ impl Detector for UnusedEvents {
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units {
-            let mut events: HashSet<String> = compilation_unit
-                .functions()
-                .filter(|f| *f.ty() == Type::Event)
-                .map(|f| f.name())
-                .collect();
+            let mut events: HashSet<String> = compilation_unit.all_events_name().collect();
 
             for f in compilation_unit.functions_user_defined() {
                 for event_stmt in f.events_emitted() {
@@ -46,16 +45,17 @@ impl Detector for UnusedEvents {
                             .expect("Library function not found in the registry");
 
                         if let CoreConcreteLibfunc::FunctionCall(f_called) = libfunc {
-                            // We remove the function called from events
-                            events.remove(
-                                &f_called
-                                    .function
-                                    .id
-                                    .debug_name
-                                    .as_ref()
-                                    .unwrap()
-                                    .to_string(),
-                            );
+                            // The first non builtin argument is the ContractState, the event is the second
+                            let event_name = filter_builtins_from_signature(
+                                &f_called.signature.param_signatures,
+                            )[1]
+                            .ty
+                            .debug_name
+                            .as_ref()
+                            .unwrap()
+                            .as_str();
+                            // We remove the event emitted from events
+                            events.remove(event_name);
                         }
                     }
                 }

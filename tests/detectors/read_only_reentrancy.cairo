@@ -8,29 +8,32 @@ mod TestContract {
     use super::IAnotherContractDispatcherTrait;
     use super::IAnotherContractDispatcher;
     use starknet::ContractAddress;
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        MyEvent: MyEvent,
-    }
     
-    #[derive(Drop, starknet::Event)]
-    struct MyEvent {}
-
     #[storage]
-    struct Storage {}
-
-    #[external(v0)]
-    fn good1(ref self: ContractState, address: ContractAddress) {
-        self.emit(MyEvent { });
-        IAnotherContractDispatcher { contract_address: address }.foo(4);
+    struct Storage {
+        a: felt252,
+        b: felt252,
     }
 
     #[external(v0)]
-    fn bad1(ref self: ContractState, address: ContractAddress) {
+    fn get_a(self: @ContractState) -> felt252 {
+        self.a.read()
+    }
+
+    #[external(v0)]
+    fn get_b(self: @ContractState) -> felt252 {
+        self.b.read()
+    }
+
+    #[external(v0)]
+    fn bad(ref self: ContractState, address: ContractAddress) {
         IAnotherContractDispatcher { contract_address: address }.foo(4);
-        self.emit(MyEvent { });
+        self.a.write(4);
+    }
+
+    #[external(v0)]
+    fn ok(ref self: ContractState, address: ContractAddress) {
+        IAnotherContractDispatcher { contract_address: address }.foo(4);
     }
 
 }

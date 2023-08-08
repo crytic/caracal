@@ -1,0 +1,19 @@
+---
+source: tests/integration_tests.rs
+expression: results
+input_file: tests/detectors/read_only_reentrancy.cairo
+---
+[
+    Result {
+        impact: Medium,
+        name: "read-only-reentrancy",
+        confidence: Medium,
+        message: "Read only reentrancy in read_only_reentrancy::read_only_reentrancy::TestContract::get_a\n\tExternal call function_call<user@read_only_reentrancy::read_only_reentrancy::IAnotherContractDispatcherImpl::foo>([9], [10], [11], [12]) -> ([6], [7], [8]) done in read_only_reentrancy::read_only_reentrancy::TestContract::bad\n\tVariable written after function_call<user@read_only_reentrancy::read_only_reentrancy::TestContract::a::InternalContractStateImpl::write>([21], [22], [23], [24]) -> ([18], [19], [20]) in read_only_reentrancy::read_only_reentrancy::TestContract::bad",
+    },
+    Result {
+        impact: Low,
+        name: "reentrancy-benign",
+        confidence: Medium,
+        message: "Reentrancy in read_only_reentrancy::read_only_reentrancy::TestContract::bad\n\tExternal call function_call<user@read_only_reentrancy::read_only_reentrancy::IAnotherContractDispatcherImpl::foo>([9], [10], [11], [12]) -> ([6], [7], [8]) done in read_only_reentrancy::read_only_reentrancy::TestContract::bad\n\tVariable written after function_call<user@read_only_reentrancy::read_only_reentrancy::TestContract::a::InternalContractStateImpl::write>([21], [22], [23], [24]) -> ([18], [19], [20]) in read_only_reentrancy::read_only_reentrancy::TestContract::bad.",
+    },
+]

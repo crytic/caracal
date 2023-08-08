@@ -45,17 +45,28 @@ impl Detector for UnusedArguments {
 
                         // If an argument is unused there is a Drop as the first instruction
                         // When we don't have any more Drop instructions we are sure the others are used
-                        if let CoreConcreteLibfunc::Drop(_) = libfunc {
-                            results.push(Result {
-                                name: self.name().to_string(),
-                                impact: self.impact(),
-                                confidence: self.confidence(),
-                                message: format!(
-                                    "The {} argument in {} is never used",
-                                    number_to_ordinal(invoc.args[0].id - offset as u64 + 1),
-                                    f.name()
-                                ),
-                            })
+                        if let CoreConcreteLibfunc::Drop(drop_libfunc) = libfunc {
+                            // We don't report if self (the first argument) is unused
+                            // NOTE: as of now the compiler allows to use a ContractState argument everywhere
+                            if !drop_libfunc.signature.param_signatures[0]
+                                .ty
+                                .debug_name
+                                .as_ref()
+                                .unwrap()
+                                .as_str()
+                                .ends_with("::ContractState")
+                            {
+                                results.push(Result {
+                                    name: self.name().to_string(),
+                                    impact: self.impact(),
+                                    confidence: self.confidence(),
+                                    message: format!(
+                                        "The {} argument in {} is never used",
+                                        number_to_ordinal(invoc.args[0].id - offset as u64 + 1),
+                                        f.name()
+                                    ),
+                                })
+                            }
                         } else {
                             break;
                         }

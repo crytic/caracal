@@ -2,7 +2,6 @@ use super::detector::{Confidence, Detector, Impact, Result};
 use crate::core::compilation_unit::CompilationUnit;
 use crate::core::core_unit::CoreUnit;
 use crate::core::function::Type;
-use crate::utils::filter_builtins_from_returns;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
@@ -60,7 +59,11 @@ impl Detector for UnusedReturn {
                                 f.name() == f_called.function.id.debug_name.clone().unwrap()
                             }) {
                                 // We don't check for unused return in case of Storage functions
-                                if f.ty() == &Type::Storage {
+                                // When a loop function is called in sierra and in that function
+                                // an array is emptied with pop_front this array is dropped
+                                // when returning from the function call and it would be incorrectly
+                                // reported as unused-return
+                                if matches!(f.ty(), &Type::Storage | &Type::Loop) {
                                     continue;
                                 }
                             } else {
@@ -87,7 +90,7 @@ impl Detector for UnusedReturn {
                                         .expect("Type not found in registry");
                                     let info = ty_dropped.info();
                                     // If size is 0 it's the Unit type
-                                    if info.size != 0 {
+                                    if !info.zero_sized {
                                         results.push(Result {
                                             name: self.name().to_string(),
                                             impact: self.impact(),
@@ -103,11 +106,8 @@ impl Detector for UnusedReturn {
                                     StructConcreteLibfunc::Deconstruct(_),
                                 ) = libfunc
                                 {
-                                    let return_variables = filter_builtins_from_returns(
-                                        &f_called.signature.branch_signatures[0].vars,
-                                        invoc.branches[0].results.clone(),
-                                    )
-                                    .len();
+                                    let return_variables = invoc.branches[0].results.len();
+
                                     // Go to the next statement and update the libfunc
                                     let stmt_to_check = &following_stmts[1..];
                                     if let SierraStatement::Invocation(invoc) = &stmt_to_check[0] {
@@ -130,11 +130,8 @@ impl Detector for UnusedReturn {
                                     EnumConcreteLibfunc::Match(_),
                                 ) = libfunc
                                 {
-                                    let return_variables = filter_builtins_from_returns(
-                                        &f_called.signature.branch_signatures[0].vars,
-                                        invoc.branches[0].results.clone(),
-                                    )
-                                    .len();
+                                    let return_variables = invoc.branches[0].results.len();
+
                                     // Jump one statement which is a branch_align and the next one will be a struct_deconstruct
                                     let stmt_to_check = &following_stmts[2..];
                                     if let SierraStatement::Invocation(invoc) = &stmt_to_check[0] {
@@ -179,16 +176,17 @@ impl<'a> UnusedReturn {
         let mut return_variables_counter = 0;
         while let CoreConcreteLibfunc::Struct(StructConcreteLibfunc::Deconstruct(_)) = libfunc {
             if let SierraStatement::Invocation(invoc) = &stmt_to_check[0] {
+                libfunc = compilation_unit
+                    .registry()
+                    .get_libfunc(&invoc.libfunc_id)
+                    .expect("Library function not found in the registry");
+
                 // If there are other struct deconstruction are not related to the returned variables
                 if return_variables_counter == return_variables {
                     break;
                 }
 
                 return_variables_counter += 1;
-                libfunc = compilation_unit
-                    .registry()
-                    .get_libfunc(&invoc.libfunc_id)
-                    .expect("Library function not found in the registry");
 
                 stmt_to_check = &stmt_to_check[1..];
             } else {
@@ -204,7 +202,7 @@ impl<'a> UnusedReturn {
                 .expect("Type not found in registry");
             let info = ty_dropped.info();
             // If size is 0 it's the Unit type
-            if info.size != 0 {
+            if !info.zero_sized {
                 results.push(Result {
                     name: self.name().to_string(),
                     impact: self.impact(),

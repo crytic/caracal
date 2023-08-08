@@ -1,8 +1,11 @@
-#[contract]
+#[starknet::contract]
 mod DeadCode {
-    
-    #[external]
-    fn use_event(amount: felt252) -> felt252{
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn use_add_1(self: @ContractState, amount: felt252) -> felt252{
         add_1(amount)
     }
 

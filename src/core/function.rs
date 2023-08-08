@@ -32,7 +32,13 @@ pub enum Type {
     Private,
     /// Constructor function defined by the user
     Constructor,
-    /// Event function
+    /// Event function. These are the events emitted.
+    /// If the function name is ...::ContractStateEventEmitter::emit::<unused_events::unused_events::UnusedEvents::Event, ...>>
+    /// this doesn't explicitly mention the event emitted but rather the generic ::Event
+    /// it happens when the more verbose syntax is used e.g. self.emit(Event::MyUsedEvent(MyUsedEvent { value: amount }));
+    /// While when the other syntax is used it's possible to infer which event has been emitted
+    /// e.g. self.emit(MyUsedEvent { value: amount });
+    /// ContractStateEventEmitter::emit::<unused_events::unused_events::UnusedEvents::MyUsedEvent, ...>
     Event,
     /// Function made by the compiler for storage variables
     /// typically address, read, write
