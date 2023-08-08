@@ -12,7 +12,7 @@ Caracal is a static analyzer tool over the SIERRA representation for Starknet sm
 ## Installation
 
 ### Precompiled binaries
-Precompiled binaries are available on our [releases page](https://github.com/crytic/caracal/releases).
+Precompiled binaries are available on our [releases page](https://github.com/crytic/caracal/releases). If you are using Cairo compiler 1.x.x uses the binary v0.1.x otherwise if you are using the Cairo compiler 2.x.x uses v0.2.x.
 
 ### Building from source
 You need the Rust compiler and Cargo.  
@@ -66,18 +66,21 @@ caracal print path/to/dir --printer printer_to_use
 ```
 
 ## Detectors
-Num | Detector | What it Detects | Impact | Confidence
---- | --- | --- | --- | ---
-1 | `controlled-library-call` | Library calls with a user controlled class hash | High | Medium
-2 | `unchecked-l1-handler-from` | Detect L1 handlers without from address check | High | Medium
-3 | `reentrancy` | Detect when a storage variable is read before an external call and written after | Medium | Medium
-4 | `unused-events` | Events defined but not emitted | Medium | Medium
-5 | `unused-return` | Unused return values | Medium | Medium
-6 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium
-7 | `unused-arguments` | Unused arguments | Low | Medium
-8 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium
-9 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium
-10 | `dead-code` | Private functions never used | Low | Medium
+Num | Detector | What it Detects | Impact | Confidence | Cairo
+--- | --- | --- | --- | --- | ---
+1 | `controlled-library-call` | Library calls with a user controlled class hash | High | Medium | 1 & 2
+2 | `unchecked-l1-handler-from` | Detect L1 handlers without from address check | High | Medium | 1 & 2
+3 | `reentrancy` | Detect when a storage variable is read before an external call and written after | Medium | Medium | 1 & 2
+4 | `read-only-reentrancy` | Detect when a view function read a storage variable written after an external call | Medium | Medium | 1 & 2
+5 | `unused-events` | Events defined but not emitted | Medium | Medium | 1 & 2
+6 | `unused-return` | Unused return values | Medium | Medium | 1 & 2
+7 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium | 1
+8 | `unused-arguments` | Unused arguments | Low | Medium | 1 & 2
+9 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
+10 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
+11 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
+
+The Cairo column represent the compiler version for which the detector is valid.
 
 ## Printers
 - `cfg`: Export the CFG of each function in a .dot file
@@ -89,6 +92,5 @@ Check the wiki on the following topics:
   * [How to write a printer](https://github.com/crytic/caracal/wiki/How-to-write-a-printer)
 
 ## Limitations
-- At the moment only Cairo 1 is supported (compiler version up to 1.1.1).
 - Inlined functions are not handled correctly.
 - Since it's working over the SIERRA representation it's not possible to report where an error is in the source code but we can only report SIERRA instructions/what's available in a SIERRA program.
