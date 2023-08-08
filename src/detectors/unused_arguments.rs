@@ -48,7 +48,14 @@ impl Detector for UnusedArguments {
                         if let CoreConcreteLibfunc::Drop(drop_libfunc) = libfunc {
                             // We don't report if self (the first argument) is unused
                             // NOTE: as of now the compiler allows to use a ContractState argument everywhere
-                            if !drop_libfunc.signature.param_signatures[0].ty.debug_name.as_ref().unwrap().as_str().ends_with("::ContractState") {
+                            if !drop_libfunc.signature.param_signatures[0]
+                                .ty
+                                .debug_name
+                                .as_ref()
+                                .unwrap()
+                                .as_str()
+                                .ends_with("::ContractState")
+                            {
                                 results.push(Result {
                                     name: self.name().to_string(),
                                     impact: self.impact(),
@@ -59,7 +66,7 @@ impl Detector for UnusedArguments {
                                         f.name()
                                     ),
                                 })
-                            }   
+                            }
                         } else {
                             break;
                         }

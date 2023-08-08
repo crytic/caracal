@@ -12,6 +12,14 @@ pub const BUILTINS: [&str; 8] = [
     "System",
 ];
 
+/// Filter the builtins from a function signature
+pub fn filter_builtins_from_signature(signature: &[ParamSignature]) -> Vec<&ParamSignature> {
+    signature
+        .iter()
+        .filter(|sig_elem| !BUILTINS.contains(&sig_elem.ty.debug_name.as_ref().unwrap().as_str()))
+        .collect()
+}
+
 /// Filter the builtins arguments and returns only the user defined arguments
 pub fn filter_builtins_from_arguments(
     signature: &[ParamSignature],
@@ -21,13 +29,14 @@ pub fn filter_builtins_from_arguments(
         .iter()
         .zip(arguments)
         .filter(|(sig_elem, _)| {
-            !BUILTINS.contains(&sig_elem.ty.debug_name.clone().unwrap().as_str())
+            !BUILTINS.contains(&sig_elem.ty.debug_name.as_ref().unwrap().as_str())
         })
         .map(|(_, arg_elem)| arg_elem)
         .collect()
 }
 
 /// Filter the builtins from the return variables and returns only the user defined variables
+#[allow(dead_code)]
 pub fn filter_builtins_from_returns(
     signature: &[OutputVarInfo],
     returns: Vec<VarId>,
@@ -36,7 +45,7 @@ pub fn filter_builtins_from_returns(
         .iter()
         .zip(returns)
         .filter(|(sig_elem, _)| {
-            !BUILTINS.contains(&sig_elem.ty.debug_name.clone().unwrap().as_str())
+            !BUILTINS.contains(&sig_elem.ty.debug_name.as_ref().unwrap().as_str())
         })
         .map(|(_, arg_elem)| arg_elem)
         .collect()

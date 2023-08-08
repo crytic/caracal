@@ -10,7 +10,7 @@ mod UnusedEvents {
         MyUnusedEvent: MyUnusedEvent,
         MyUsedEvent: MyUsedEvent
     }
-    
+
     #[derive(Drop, starknet::Event)]
     struct MyUnusedEvent {
         value: u256, 
@@ -23,15 +23,7 @@ mod UnusedEvents {
 
     #[external(v0)]
     fn use_event1(ref self: ContractState, amount: u256) {
-        self.emit(Event::MyUsedEvent(MyUsedEvent { value: amount }));
-    }
-
-    fn use_event2(ref self: ContractState, amount: u256) {
-        self.emit(Event::MyUnusedEvent(MyUnusedEvent { value: amount }));
-    }
-
-    fn use_event3(ref self: ContractState, a: ContractState, amount: u256) {
-        self.emit(MyUnusedEvent { value: amount });
+        self.emit(MyUsedEvent { value: amount });
     }
 
 }

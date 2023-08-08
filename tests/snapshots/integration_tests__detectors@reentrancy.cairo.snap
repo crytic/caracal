@@ -1,48 +1,55 @@
 ---
 source: tests/integration_tests.rs
 expression: results
+input_file: tests/detectors/reentrancy.cairo
 ---
 [
     Result {
         impact: Medium,
         name: "reentrancy",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad1\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([15], [16], [17], [18]) -> ([12], [13], [14]) done in reentrancy::reentrancy::TestContract::bad1\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::write>([25], [26], [27]) -> ([22], [23], [24]) in reentrancy::reentrancy::TestContract::bad1.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad1\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([21], [22], [23], [24]) -> ([18], [19], [20]) done in reentrancy::reentrancy::TestContract::bad1\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::InternalContractStateImpl::write>([31], [32], [33], [34]) -> ([28], [29], [30]) in reentrancy::reentrancy::TestContract::bad1.",
     },
     Result {
         impact: Medium,
         name: "reentrancy",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([19], [20], [21], [22]) -> ([16], [17], [18]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::write>([57], [58], [59]) -> ([54], [55], [56]) in reentrancy::reentrancy::TestContract::bad2.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([25], [26], [27], [28]) -> ([22], [23], [24]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::InternalContractStateImpl::write>([73], [74], [75], [76]) -> ([70], [71], [72]) in reentrancy::reentrancy::TestContract::bad2.",
     },
     Result {
         impact: Medium,
         name: "reentrancy",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([47], [48], [49], [50]) -> ([44], [45], [46]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::b::write>([66], [67], [68]) -> ([63], [64], [65]) in reentrancy::reentrancy::TestContract::bad2.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([60], [61], [62], [63]) -> ([57], [58], [59]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::b::InternalContractStateImpl::write>([85], [86], [87], [88]) -> ([82], [83], [84]) in reentrancy::reentrancy::TestContract::bad2.",
     },
     Result {
         impact: Medium,
         name: "reentrancy",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad3\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([8], [9], [10], [11]) -> ([5], [6], [7]) done in reentrancy::reentrancy::TestContract::internal_ext_call\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::write>([22], [23], [24]) -> ([19], [20], [21]) in reentrancy::reentrancy::TestContract::bad3.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad3\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([8], [9], [10], [11]) -> ([5], [6], [7]) done in reentrancy::reentrancy::TestContract::internal_ext_call\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::InternalContractStateImpl::write>([28], [29], [30], [31]) -> ([25], [26], [27]) in reentrancy::reentrancy::TestContract::bad3.",
     },
     Result {
         impact: Medium,
         name: "reentrancy",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad4\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([15], [16], [17], [18]) -> ([12], [13], [14]) done in reentrancy::reentrancy::TestContract::internal_ext_call2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::write>([15], [16], [17]) -> ([12], [13], [14]) in reentrancy::reentrancy::TestContract::bad4.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad4\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([21], [22], [23], [24]) -> ([18], [19], [20]) done in reentrancy::reentrancy::TestContract::internal_ext_call2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::InternalContractStateImpl::write>([21], [22], [23], [24]) -> ([18], [19], [20]) in reentrancy::reentrancy::TestContract::bad4.",
+    },
+    Result {
+        impact: Medium,
+        name: "reentrancy",
+        confidence: Medium,
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad5\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([8], [9], [10], [11]) -> ([5], [6], [7]) done in reentrancy::reentrancy::TestContract::bad5[expr8]\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::InternalContractStateImpl::write>([30], [31], [32], [33]) -> ([27], [28], [29]) in reentrancy::reentrancy::TestContract::bad5.",
     },
     Result {
         impact: Low,
         name: "reentrancy-benign",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([19], [20], [21], [22]) -> ([16], [17], [18]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::b::write>([66], [67], [68]) -> ([63], [64], [65]) in reentrancy::reentrancy::TestContract::bad2.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([25], [26], [27], [28]) -> ([22], [23], [24]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::b::InternalContractStateImpl::write>([85], [86], [87], [88]) -> ([82], [83], [84]) in reentrancy::reentrancy::TestContract::bad2.",
     },
     Result {
         impact: Low,
         name: "reentrancy-benign",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([47], [48], [49], [50]) -> ([44], [45], [46]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::write>([57], [58], [59]) -> ([54], [55], [56]) in reentrancy::reentrancy::TestContract::bad2.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad2\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([60], [61], [62], [63]) -> ([57], [58], [59]) done in reentrancy::reentrancy::TestContract::bad2\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::a::InternalContractStateImpl::write>([73], [74], [75], [76]) -> ([70], [71], [72]) in reentrancy::reentrancy::TestContract::bad2.",
     },
 ]

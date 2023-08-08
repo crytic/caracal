@@ -18,7 +18,7 @@ use crate::core::core_unit::CoreOpts;
 
 pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     // NOTE: compiler_version module is not public so we need to update it as we update the Cairo version we use
-    println!("Compiling with starknet-compile 2.0.0-rc4.");
+    println!("Compiling with starknet-compile 2.1.0.");
 
     // corelib cli option has priority over the environment variable
     let corelib = match opts.corelib {

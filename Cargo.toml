@@ -1,14 +1,14 @@
 [package]
 name = "caracal"
 description = "Starknet smart contract static analysis tool"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0"
-clap = "4.1"
+clap = { version = "4.1", features = ["derive"] }
 serde_json = "1.0"
 num-bigint = "0.4"
 num-traits = "0.2"
@@ -18,17 +18,17 @@ num-integer = "0.1"
 termcolor = "1.2"
 graphviz-rust = "0.6.2"
 
-cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
-cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.0.0-rc4" }
+cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-plugins = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-starknet = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-filesystem = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-parser = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-syntax = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
 
 [dev-dependencies]
 insta = { version = "1.30", features = ["glob"] }

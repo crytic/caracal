@@ -9,10 +9,7 @@ use cairo_lang_sierra::program::{
     Function as SierraFunction, GenStatement, Program, Statement as SierraStatement,
 };
 use cairo_lang_sierra::program_registry::ProgramRegistry;
-use cairo_lang_starknet::abi::{
-    Contract,
-    Item::Function as AbiFunction,
-};
+use cairo_lang_starknet::abi::{Contract, Item::Function as AbiFunction};
 
 pub struct CompilationUnit {
     /// The compiled sierra program
@@ -53,13 +50,30 @@ impl CompilationUnit {
         self.functions.iter().filter(|f| {
             matches!(
                 f.ty(),
-                Type::Constructor | Type::External | Type::View | Type::Private | Type::L1Handler
+                Type::Constructor
+                    | Type::External
+                    | Type::View
+                    | Type::Private
+                    | Type::L1Handler
+                    | Type::Loop
             )
         })
     }
 
     pub fn function_by_name(&self, name: &str) -> Option<&Function> {
         self.functions.iter().find(|f| f.name().as_str() == name)
+    }
+
+    /// Returns all events name
+    pub fn all_events_name(&self) -> impl Iterator<Item = String> + '_ {
+        self.functions
+            .iter()
+            .filter(|f| {
+                f.name().ends_with("::append_keys_and_data")
+                    && !f.name().contains("::EventIsEvent::") // EventIsEvent represents the enum Event that contains the events so we discard it
+            })
+            // We discard IsEvent to have only the events' name e.g. MyEventIsEvent -> MyEvent
+            .map(|event| event.name().rsplit_once("IsEvent::").unwrap().0.to_owned())
     }
 
     pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
@@ -127,7 +141,8 @@ impl CompilationUnit {
         for f in self.functions.iter_mut() {
             let full_name = f.name();
 
-            if full_name.starts_with("core::") {
+            // append_keys_and_data is a function implemented by the starknet::Event trait
+            if full_name.starts_with("core::") || full_name.ends_with("::append_keys_and_data") {
                 f.set_ty(Type::Core);
             } else if full_name.contains("::__external::")
                 || full_name.contains("::__constructor::")
@@ -159,9 +174,9 @@ impl CompilationUnit {
                 }
             } else if l1_handler_functions.contains(&full_name) {
                 f.set_ty(Type::L1Handler);
-            } else if full_name.ends_with("::address")
-                || full_name.ends_with("::read")
-                || full_name.ends_with("::write")
+            } else if full_name.ends_with("::InternalContractStateImpl::address")
+                || full_name.ends_with("::InternalContractStateImpl::read")
+                || full_name.ends_with("::InternalContractStateImpl::write")
             {
                 // A user defined function named address/read/write can be incorrectly set to Storage
                 f.set_ty(Type::Storage);
@@ -173,21 +188,12 @@ impl CompilationUnit {
                 f.set_ty(Type::AbiCallContract)
             } else {
                 // Event or private function
-                // Could be an event or a private function in the contract's module
-                let possible_event_name = full_name.rsplit_once("::").unwrap().1;
-
-                let mut found = false;
-                for item in self.abi.items.iter() {
-                    if let Event(e) = item {
-                        if e.name == possible_event_name {
-                            f.set_ty(Type::Event);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                if !found {
+                // Could be an event emission or a private function in the contract's module
+                if full_name.contains("::ContractStateEventEmitter::emit::") {
+                    f.set_ty(Type::Event);
+                } else if full_name.ends_with(']') {
+                    f.set_ty(Type::Loop);
+                } else {
                     f.set_ty(Type::Private);
                 }
             }
@@ -289,12 +295,16 @@ impl CompilationUnit {
         while changed {
             changed = false;
 
-            for calling_function in self
-                .functions
-                .iter()
-                .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler | Type::Private))
-            {
-                for function_call in calling_function.private_functions_calls() {
+            for calling_function in self.functions.iter().filter(|f| {
+                matches!(
+                    f.ty(),
+                    Type::External | Type::L1Handler | Type::Private | Type::Loop
+                )
+            }) {
+                for function_call in calling_function
+                    .private_functions_calls()
+                    .chain(calling_function.loop_functions_calls())
+                {
                     // It will always be an invocation
                     if let GenStatement::Invocation(invoc) = function_call {
                         // The core lib func instance

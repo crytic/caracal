@@ -1,36 +1,37 @@
 ---
 source: tests/integration_tests.rs
 expression: results
+input_file: tests/detectors/unused_return.cairo
 ---
 [
     Result {
         impact: Medium,
         name: "unused-return",
         confidence: Medium,
-        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_1>([6], [7], [8]) -> ([3], [4], [5]) in unused_return::unused_return::UnusedReturn::unused_return_1",
+        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_1>([7], [8], [9], [10]) -> ([4], [5], [6]) in unused_return::unused_return::UnusedReturn::unused_return_1",
     },
     Result {
         impact: Medium,
         name: "unused-return",
         confidence: Medium,
-        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_2>([2]) -> ([1]) in unused_return::unused_return::UnusedReturn::unused_return_2",
+        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_2>([3]) -> ([2]) in unused_return::unused_return::UnusedReturn::unused_return_2",
     },
     Result {
         impact: Medium,
         name: "unused-return",
         confidence: Medium,
-        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_3>([2]) -> ([1]) in unused_return::unused_return::UnusedReturn::unused_return_3",
+        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_3>([3]) -> ([2]) in unused_return::unused_return::UnusedReturn::unused_return_3",
     },
     Result {
         impact: Medium,
         name: "unused-return",
         confidence: Medium,
-        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_4>([2]) -> ([1]) in unused_return::unused_return::UnusedReturn::unused_return_4",
+        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_4>([3]) -> ([2]) in unused_return::unused_return::UnusedReturn::unused_return_4",
     },
     Result {
         impact: Medium,
         name: "unused-return",
         confidence: Medium,
-        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_5>([5], [6]) -> ([2], [3], [4]) in unused_return::unused_return::UnusedReturn::unused_return_5",
+        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_5>([6], [7], [8]) -> ([3], [4], [5]) in unused_return::unused_return::UnusedReturn::unused_return_5",
     },
 ]

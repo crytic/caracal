@@ -18,7 +18,7 @@ mod TestContract {
     }
 
     #[external(v0)]
-    fn bad2(self: @ContractState, class_hash: ClassHash) -> u128 {
+    fn bad2(ref self: ContractState, class_hash: ClassHash) -> u128 {
         internal_lib_call(class_hash)
     }
 
@@ -27,7 +27,7 @@ mod TestContract {
     }
 
     #[external(v0)]
-    fn good(self: @ContractState) -> u128 {
+    fn good(ref self: ContractState) -> u128 {
         IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(2_u128)
     }
 

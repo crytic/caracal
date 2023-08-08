@@ -143,7 +143,7 @@ impl ReentrancyAnalysis {
                                     Type::Event => {
                                         inner_state.events.insert(basic_block.clone());
                                     }
-                                    Type::Private => {
+                                    Type::Private | Type::Loop => {
                                         if let GenStatement::Invocation(invoc) =
                                             instruction.get_statement()
                                         {

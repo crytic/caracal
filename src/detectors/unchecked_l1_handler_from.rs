@@ -41,7 +41,7 @@ impl Detector for UncheckedL1HandlerFrom {
 
             for f in l1_handler_funcs {
                 let from_address =
-                    f.params().map(|p| p.id.clone()).collect::<Vec<VarId>>()[0].clone();
+                    f.params().map(|p| p.id.clone()).collect::<Vec<VarId>>()[1].clone();
                 let mut sources = HashSet::new();
                 sources.insert(WrapperVariable::new(f.name(), from_address));
 

@@ -1,29 +1,36 @@
-#[abi]
-trait IAnotherContract {
-    fn foo(a: felt252);
+#[starknet::interface]
+trait IAnotherContract<T> {
+    fn foo(self: @T, a: felt252);
 }
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use super::IAnotherContractDispatcherTrait;
     use super::IAnotherContractDispatcher;
     use starknet::ContractAddress;
 
     #[event]
-    fn MyEvent() {}
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        MyEvent: MyEvent,
+    }
+    
+    #[derive(Drop, starknet::Event)]
+    struct MyEvent {}
 
+    #[storage]
     struct Storage {}
 
-    #[external]
-    fn good1(address: ContractAddress) {
-        MyEvent();
+    #[external(v0)]
+    fn good1(ref self: ContractState, address: ContractAddress) {
+        self.emit(MyEvent { });
         IAnotherContractDispatcher { contract_address: address }.foo(4);
     }
 
-    #[external]
-    fn bad1(address: ContractAddress) {
+    #[external(v0)]
+    fn bad1(ref self: ContractState, address: ContractAddress) {
         IAnotherContractDispatcher { contract_address: address }.foo(4);
-        MyEvent();
+        self.emit(MyEvent { });
     }
 
 }
