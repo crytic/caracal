@@ -60,7 +60,11 @@ impl Detector for UnusedReturn {
                                 f.name() == f_called.function.id.debug_name.clone().unwrap()
                             }) {
                                 // We don't check for unused return in case of Storage functions
-                                if f.ty() == &Type::Storage {
+                                // When a loop function is called in sierra and in that function
+                                // an array is emptied with pop_front this array is dropped
+                                // when returning from the function call and it would be incorrectly
+                                // reported as unused-return
+                                if matches!(f.ty(), &Type::Storage | &Type::Loop) {
                                     continue;
                                 }
                             } else {
