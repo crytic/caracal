@@ -11,6 +11,7 @@ pub mod unchecked_l1_handler_from;
 pub mod unused_arguments;
 pub mod unused_events;
 pub mod unused_return;
+pub mod felt252_overflow;
 
 pub fn get_detectors() -> Vec<Box<dyn Detector>> {
     vec![
@@ -24,5 +25,6 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<reentrancy_events::ReentrancyEvents>::default(),
         Box::<read_only_reentrancy::ReadOnlyReentrancy>::default(),
         Box::<unchecked_l1_handler_from::UncheckedL1HandlerFrom>::default(),
+        Box::<felt252_overflow::Felt252Overflow>::default(),
     ]
 }
