@@ -3,6 +3,7 @@ use self::detector::Detector;
 pub mod controlled_library_call;
 pub mod dead_code;
 pub mod detector;
+pub mod felt252_overflow;
 pub mod read_only_reentrancy;
 pub mod reentrancy;
 pub mod reentrancy_benign;
@@ -11,7 +12,6 @@ pub mod unchecked_l1_handler_from;
 pub mod unused_arguments;
 pub mod unused_events;
 pub mod unused_return;
-pub mod felt252_overflow;
 
 pub fn get_detectors() -> Vec<Box<dyn Detector>> {
     vec![

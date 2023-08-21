@@ -89,7 +89,7 @@ impl CompilationUnit {
             .iter()
             .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler))
         {
-            for param in external_function.params() {
+            for param in external_function.params().skip(1) {
                 parameters.insert(WrapperVariable::new(
                     external_function.name(),
                     param.id.clone(),
@@ -328,7 +328,7 @@ impl CompilationUnit {
                                 .collect();
 
                             // Calling function's parameters
-                            for param in calling_function.params() {
+                            for param in calling_function.params().skip(1) {
                                 // Check if the arguments used to call the private function are tainted by the calling function's parameters
                                 for sink in external_taint.taints_any_sinks_variable(
                                     &WrapperVariable::new(

@@ -57,7 +57,7 @@ impl CfgRegular {
         for (i, statement) in statements.iter().enumerate() {
             let current_pc = base_pc + i;
             match statement {
-                // Statement with a single branch. It's a statemnt that doesn't change the flow (Fallthrough) or an unconditional jump
+                // Statement with a single branch. It's a statement that doesn't change the flow (Fallthrough) or an unconditional jump
                 SierraStatement::Invocation(function) if function.branches.len() == 1 => {
                     match function.branches[0].target {
                         BranchTarget::Fallthrough => {

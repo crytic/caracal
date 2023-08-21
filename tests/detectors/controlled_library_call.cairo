@@ -4,16 +4,18 @@ trait IAnotherContract<T> {
 }
 
 #[starknet::contract]
-mod TestContract {
+mod ArbitraryLibraryCall {
     use super::IAnotherContractDispatcherTrait;
     use super::IAnotherContractLibraryDispatcher;
     use starknet::class_hash::ClassHash;
 
     #[storage]
-    struct Storage {}
+    struct Storage {
+        important_param: u128,
+    }
 
     #[external(v0)]
-    fn bad1(ref self: ContractState, class_hash: ClassHash) -> u128 {
+    fn controlled_library_call(ref self: ContractState, class_hash: ClassHash) -> u128 {
         IAnotherContractLibraryDispatcher { class_hash: class_hash }.foo(2_u128)
     }
 
