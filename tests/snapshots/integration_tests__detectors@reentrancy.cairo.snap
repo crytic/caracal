@@ -5,6 +5,12 @@ input_file: tests/detectors/reentrancy.cairo
 ---
 [
     Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function reentrancy::reentrancy::TestContract::bad2 uses the felt252 operation felt252_sub([4], [5]) -> ([6]), which is not overflow safe",
+    },
+    Result {
         impact: Medium,
         name: "reentrancy",
         confidence: Medium,

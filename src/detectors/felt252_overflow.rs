@@ -85,13 +85,13 @@ impl Felt252Overflow {
             {
                 let msg = format!("{},", &param);
                 taints.push_str(&msg);
-                tainted_by.insert(&param);
+                tainted_by.insert(param);
             }
         }
         // Get rid of trailing comma from formatting
         taints.pop();
         // Not tainted by any parameter, but still uses felt252 type
-        if tainted_by.len() == 0 {
+        if tainted_by.is_empty() {
             let msg = format!(
                 "The function {} uses the felt252 operation {}, which is not overflow safe",
                 &name, libfunc

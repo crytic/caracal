@@ -8,12 +8,12 @@ input_file: tests/detectors/controlled_library_call.cairo
         impact: High,
         name: "controlled-library-call",
         confidence: Medium,
-        message: "Library call to user controlled class hash in controlled_library_call::controlled_library_call::TestContract::bad1\n function_call<user@controlled_library_call::controlled_library_call::IAnotherContractLibraryDispatcherImpl::foo>([11], [12], [13], [14], [15]) -> ([7], [8], [9], [10])",
+        message: "Library call to user controlled class hash in controlled_library_call::controlled_library_call::ArbitraryLibraryCall::bad1\n function_call<user@controlled_library_call::controlled_library_call::IAnotherContractLibraryDispatcherImpl::foo>([11], [12], [13], [14], [15]) -> ([7], [8], [9], [10])",
     },
     Result {
         impact: High,
         name: "controlled-library-call",
         confidence: Medium,
-        message: "Library call to user controlled class hash in controlled_library_call::controlled_library_call::TestContract::internal_lib_call\n function_call<user@controlled_library_call::controlled_library_call::IAnotherContractLibraryDispatcherImpl::foo>([10], [11], [12], [13], [14]) -> ([6], [7], [8], [9])",
+        message: "Library call to user controlled class hash in controlled_library_call::controlled_library_call::ArbitraryLibraryCall::internal_lib_call\n function_call<user@controlled_library_call::controlled_library_call::IAnotherContractLibraryDispatcherImpl::foo>([10], [11], [12], [13], [14]) -> ([6], [7], [8], [9])",
     },
 ]

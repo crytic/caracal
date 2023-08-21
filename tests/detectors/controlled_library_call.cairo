@@ -11,11 +11,10 @@ mod ArbitraryLibraryCall {
 
     #[storage]
     struct Storage {
-        important_param: u128,
     }
 
     #[external(v0)]
-    fn controlled_library_call(ref self: ContractState, class_hash: ClassHash) -> u128 {
+    fn bad1(ref self: ContractState, class_hash: ClassHash) -> u128 {
         IAnotherContractLibraryDispatcher { class_hash: class_hash }.foo(2_u128)
     }
 
