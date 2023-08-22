@@ -1,5 +1,5 @@
 // Taken from https://github.com/starkware-libs/cairo/blob/77ae28f996c0960ce5cfc926703f60bae8d5db5a/crates/cairo-lang-starknet/src/felt252_vec_compression.rs
-
+use cairo_felt::Felt252;
 use cairo_lang_utils::bigint::BigUintAsHex;
 use num_bigint::BigUint;
 use num_integer::Integer;
@@ -48,13 +48,10 @@ fn pop_usize(values: &[BigUintAsHex]) -> Option<(&[BigUintAsHex], usize)> {
     Some((values, size.value.to_usize()?))
 }
 
-const FIELD_HIGH: u128 = (1 << 123) + (17 << 64); // this is equal to 10633823966279327296825105735305134080
-const FIELD_LOW: u128 = 1;
-
 /// Given the size of the code book, returns the number of code words that can be encoded in a felt.
 fn words_per_felt(padded_code_size: usize) -> usize {
     let mut count = 0;
-    let prime = (Into::<BigUint>::into(FIELD_HIGH) << 128) + Into::<BigUint>::into(FIELD_LOW);
+    let prime = Felt252::prime();
     let mut max_encoded = BigUint::from(padded_code_size);
     while max_encoded < prime {
         max_encoded *= padded_code_size;
