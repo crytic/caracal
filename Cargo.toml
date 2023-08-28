@@ -29,6 +29,8 @@ cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", tag
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
 cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
 cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.1.0" }
+thiserror = "1.0.47"
+cairo-felt = "0.8.6"
 
 [dev-dependencies]
 insta = { version = "1.30", features = ["glob"] }
