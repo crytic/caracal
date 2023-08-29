@@ -1,0 +1,59 @@
+digraph "felt252_overflow_felt252_overflow_Felt252Overflow_bad_sub_controlled.dot" {
+    0[label="BB 0
+139 struct_deconstruct<felt252_overflow::felt252_overflow::Felt252Overflow::ContractState>([2]) -> ([4], [5])
+140 snapshot_take<felt252_overflow::felt252_overflow::Felt252Overflow::a::ContractState>([4]) -> ([6], [7])
+141 store_temp<GasBuiltin>([0]) -> ([11])
+142 store_temp<System>([1]) -> ([12])
+143 store_temp<felt252_overflow::felt252_overflow::Felt252Overflow::a::ContractState>([7]) -> ([13])
+144 function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::a::InternalContractStateImpl::read>([11], [12], [13]) -> ([8], [9], [10])
+145 enum_match<core::panics::PanicResult::<(core::felt252,)>>([10]) { fallthrough([14]) 173([15]) }
+"]
+    0 -> 1 
+    0 -> 4 
+    1[label="BB 1
+146 branch_align() -> ()
+147 struct_deconstruct<Tuple<felt252>>([14]) -> ([16])
+148 felt252_sub([16], [3]) -> ([17])
+149 store_temp<GasBuiltin>([8]) -> ([21])
+150 store_temp<System>([9]) -> ([22])
+151 store_temp<felt252_overflow::felt252_overflow::Felt252Overflow::b::ContractState>([5]) -> ([23])
+152 store_temp<felt252>([17]) -> ([24])
+153 function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::b::InternalContractStateImpl::write>([21], [22], [23], [24]) -> ([18], [19], [20])
+154 enum_match<core::panics::PanicResult::<(felt252_overflow::felt252_overflow::Felt252Overflow::b::ContractState, ())>>([20]) { fallthrough([25]) 166([26]) }
+"]
+    1 -> 2 
+    1 -> 3 
+    2[label="BB 2
+155 branch_align() -> ()
+156 struct_deconstruct<Tuple<felt252_overflow::felt252_overflow::Felt252Overflow::b::ContractState, Unit>>([25]) -> ([27], [28])
+157 drop<Unit>([28]) -> ()
+158 struct_construct<felt252_overflow::felt252_overflow::Felt252Overflow::ContractState>([6], [27]) -> ([29])
+159 struct_construct<Unit>() -> ([30])
+160 struct_construct<Tuple<felt252_overflow::felt252_overflow::Felt252Overflow::ContractState, Unit>>([29], [30]) -> ([31])
+161 enum_init<core::panics::PanicResult::<(felt252_overflow::felt252_overflow::Felt252Overflow::ContractState, ())>, 0>([31]) -> ([32])
+162 store_temp<GasBuiltin>([18]) -> ([33])
+163 store_temp<System>([19]) -> ([34])
+164 store_temp<core::panics::PanicResult::<(felt252_overflow::felt252_overflow::Felt252Overflow::ContractState, ())>>([32]) -> ([35])
+165 return([33], [34], [35])
+"]
+    3[label="BB 3
+166 branch_align() -> ()
+167 drop<felt252_overflow::felt252_overflow::Felt252Overflow::a::ContractState>([6]) -> ()
+168 enum_init<core::panics::PanicResult::<(felt252_overflow::felt252_overflow::Felt252Overflow::ContractState, ())>, 1>([26]) -> ([36])
+169 store_temp<GasBuiltin>([18]) -> ([37])
+170 store_temp<System>([19]) -> ([38])
+171 store_temp<core::panics::PanicResult::<(felt252_overflow::felt252_overflow::Felt252Overflow::ContractState, ())>>([36]) -> ([39])
+172 return([37], [38], [39])
+"]
+    4[label="BB 4
+173 branch_align() -> ()
+174 drop<felt252_overflow::felt252_overflow::Felt252Overflow::a::ContractState>([6]) -> ()
+175 drop<felt252_overflow::felt252_overflow::Felt252Overflow::b::ContractState>([5]) -> ()
+176 drop<felt252>([3]) -> ()
+177 enum_init<core::panics::PanicResult::<(felt252_overflow::felt252_overflow::Felt252Overflow::ContractState, ())>, 1>([15]) -> ([40])
+178 store_temp<GasBuiltin>([8]) -> ([41])
+179 store_temp<System>([9]) -> ([42])
+180 store_temp<core::panics::PanicResult::<(felt252_overflow::felt252_overflow::Felt252Overflow::ContractState, ())>>([40]) -> ([43])
+181 return([41], [42], [43])
+"]
+}

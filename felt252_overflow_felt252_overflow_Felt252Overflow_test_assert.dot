@@ -1,0 +1,98 @@
+digraph "felt252_overflow_felt252_overflow_Felt252Overflow_test_assert.dot" {
+    0[label="BB 0
+210 felt252_const<4>() -> ([1])
+211 snapshot_take<felt252>([1]) -> ([2], [3])
+212 drop<felt252>([2]) -> ()
+213 felt252_const<0>() -> ([4])
+214 snapshot_take<felt252>([4]) -> ([5], [6])
+215 drop<felt252>([5]) -> ()
+216 rename<felt252>([3]) -> ([7])
+217 snapshot_take<felt252>([7]) -> ([8], [9])
+218 drop<felt252>([8]) -> ()
+219 rename<felt252>([6]) -> ([10])
+220 snapshot_take<felt252>([10]) -> ([11], [12])
+221 drop<felt252>([11]) -> ()
+222 rename<felt252>([9]) -> ([13])
+223 rename<felt252>([12]) -> ([14])
+224 store_temp<felt252>([13]) -> ([13])
+225 felt252_sub([13], [14]) -> ([15])
+226 store_temp<felt252>([15]) -> ([15])
+227 felt252_is_zero([15]) { fallthrough() 233([16]) }
+"]
+    0 -> 1 
+    0 -> 2 
+    1[label="BB 1
+228 branch_align() -> ()
+229 struct_construct<Unit>() -> ([17])
+230 enum_init<core::bool, 1>([17]) -> ([18])
+231 store_temp<core::bool>([18]) -> ([19])
+232 jump() { 238() }
+"]
+    1 -> 3 
+    2[label="BB 2
+233 branch_align() -> ()
+234 drop<NonZero<felt252>>([16]) -> ()
+235 struct_construct<Unit>() -> ([20])
+236 enum_init<core::bool, 0>([20]) -> ([21])
+237 store_temp<core::bool>([21]) -> ([19])
+"]
+    2 -> 3 
+    3[label="BB 3
+238 bool_not_impl([19]) -> ([22])
+239 store_temp<core::bool>([22]) -> ([22])
+240 enum_match<core::bool>([22]) { fallthrough([23]) 253([24]) }
+"]
+    3 -> 4 
+    3 -> 5 
+    4[label="BB 4
+241 branch_align() -> ()
+242 drop<Unit>([23]) -> ()
+243 drop<felt252>([0]) -> ()
+244 array_new<felt252>() -> ([25])
+245 felt252_const<6447460>() -> ([26])
+246 store_temp<felt252>([26]) -> ([26])
+247 array_append<felt252>([25], [26]) -> ([27])
+248 struct_construct<core::panics::Panic>() -> ([28])
+249 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([28], [27]) -> ([29])
+250 enum_init<core::panics::PanicResult::<((),)>, 1>([29]) -> ([30])
+251 store_temp<core::panics::PanicResult::<((),)>>([30]) -> ([31])
+252 return([31])
+"]
+    5[label="BB 5
+253 branch_align() -> ()
+254 drop<Unit>([24]) -> ()
+255 snapshot_take<felt252>([0]) -> ([32], [33])
+256 drop<felt252>([32]) -> ()
+257 felt252_const<3>() -> ([34])
+258 snapshot_take<felt252>([34]) -> ([35], [36])
+259 drop<felt252>([35]) -> ()
+260 rename<felt252>([33]) -> ([37])
+261 rename<felt252>([36]) -> ([38])
+262 felt252_sub([37], [38]) -> ([39])
+263 store_temp<felt252>([39]) -> ([39])
+264 felt252_is_zero([39]) { fallthrough() 271([40]) }
+"]
+    5 -> 6 
+    5 -> 7 
+    6[label="BB 6
+265 branch_align() -> ()
+266 struct_construct<Unit>() -> ([41])
+267 struct_construct<Tuple<Unit>>([41]) -> ([42])
+268 enum_init<core::panics::PanicResult::<((),)>, 0>([42]) -> ([43])
+269 store_temp<core::panics::PanicResult::<((),)>>([43]) -> ([44])
+270 return([44])
+"]
+    7[label="BB 7
+271 branch_align() -> ()
+272 drop<NonZero<felt252>>([40]) -> ()
+273 array_new<felt252>() -> ([45])
+274 felt252_const<28523>() -> ([46])
+275 store_temp<felt252>([46]) -> ([46])
+276 array_append<felt252>([45], [46]) -> ([47])
+277 struct_construct<core::panics::Panic>() -> ([48])
+278 struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([48], [47]) -> ([49])
+279 enum_init<core::panics::PanicResult::<((),)>, 1>([49]) -> ([50])
+280 store_temp<core::panics::PanicResult::<((),)>>([50]) -> ([51])
+281 return([51])
+"]
+}

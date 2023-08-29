@@ -2,14 +2,23 @@ use super::detector::{Confidence, Detector, Impact, Result};
 use crate::core::compilation_unit::CompilationUnit;
 use crate::core::core_unit::CoreUnit;
 use crate::utils::filter_builtins_from_arguments;
-
+use cairo_lang_sierra::extensions::felt252::Felt252BinaryOperationConcrete;
+use cairo_lang_sierra::extensions::felt252::Felt252BinaryOperator;
 use cairo_lang_sierra::extensions::lib_func::ParamSignature;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::{core::CoreConcreteLibfunc, felt252::Felt252Concrete};
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::Statement as SierraStatement;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
+pub struct SubVarInfo<'a> {
+    /// The libfunc used
+    libfunc: &'a SierraStatement,
+    /// The parameters used
+    params: &'a [ParamSignature],
+    /// Arguments to the sub
+    args: &'a Vec<VarId>,
+}
 #[derive(Default)]
 pub struct Felt252Overflow {}
 
@@ -36,7 +45,9 @@ impl Detector for Felt252Overflow {
         let compilation_units = core.get_compilation_units();
         for compilation_unit in compilation_units {
             let functions = compilation_unit.functions_user_defined();
+            // Iterate through the functions and find binary operations
             for f in functions {
+                let mut sub_vars = HashMap::new();
                 let name = f.name();
                 for stmt in f.get_statements().iter() {
                     if let SierraStatement::Invocation(invoc) = stmt {
@@ -49,14 +60,54 @@ impl Detector for Felt252Overflow {
                         if let CoreConcreteLibfunc::Felt252(Felt252Concrete::BinaryOperation(op)) =
                             libfunc
                         {
-                            self.check_felt252_tainted(
-                                &mut results,
-                                compilation_unit,
+                            if let Felt252BinaryOperationConcrete::WithVar(var) = op {
+                                match var.operator {
+                                    // We need to see if this is a geniune sub or an if/assert
+                                    Felt252BinaryOperator::Sub => {
+                                        // Get the return value of the sub statement
+                                        let ret_value = &invoc.branches[0].results[0];
+                                        let sub_struct = SubVarInfo {
+                                            libfunc: stmt,
+                                            params: op.param_signatures(),
+                                            args: &invoc.args,
+                                        };
+                                        // Add to HashMap to track return values for later
+                                        sub_vars.insert(ret_value, sub_struct);
+                                        // Continue the loop, we'll analyze this after we check felt252_is_zero
+                                        continue;
+                                    }
+                                    _ => {
+                                        self.check_felt252_tainted(
+                                            &mut results,
+                                            compilation_unit,
+                                            op.param_signatures(),
+                                            stmt,
+                                            invoc.args.clone(),
+                                            &name,
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        // Check if felt252_is_zero uses return param of sub instruction
+                        if let CoreConcreteLibfunc::Felt252(Felt252Concrete::IsZero(op)) = libfunc {
+                            let user_params = filter_builtins_from_arguments(
                                 op.param_signatures(),
-                                stmt,
                                 invoc.args.clone(),
-                                &name,
                             );
+                            for (k, v) in &sub_vars {
+                                if !user_params.contains(k) {
+                                    // This is a geniuine sub instruction since it isn't used by felt252_is_zero
+                                    self.check_felt252_tainted(
+                                        &mut results,
+                                        compilation_unit,
+                                        v.params,
+                                        v.libfunc,
+                                        v.args.clone(),
+                                        &name,
+                                    );
+                                }
+                            }
                         }
                     }
                 }

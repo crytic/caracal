@@ -43,5 +43,20 @@ mod Felt252Overflow {
         let a = self.a.read();
         self.b.write(a - user_param);
     }
+    #[external(v0)]
+    fn test_sub_assert(self: @ContractState, p: felt252) -> felt252 {
+        test_assert(p);
+        if p == 10 {
+            3
+        }
+        else {
+            4 - 5
+        }
+    }
+    fn test_assert(p: felt252) {
+        assert(4 != 0,'bad');
+        assert(p == 3, 'ok');
+
+    }
 
 }

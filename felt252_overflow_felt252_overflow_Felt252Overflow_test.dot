@@ -1,0 +1,48 @@
+digraph "felt252_overflow_felt252_overflow_Felt252Overflow_test.dot" {
+    0[label="BB 0
+182 drop<felt252_overflow::felt252_overflow::Felt252Overflow::ContractState>([0]) -> ()
+183 dup<felt252>([1]) -> ([1], [3])
+184 store_temp<felt252>([3]) -> ([3])
+185 function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::test_assert>([3]) -> ([2])
+186 enum_match<core::panics::PanicResult::<((),)>>([2]) { fallthrough([4]) 205([5]) }
+"]
+    0 -> 1 
+    0 -> 5 
+    1[label="BB 1
+187 branch_align() -> ()
+188 drop<Tuple<Unit>>([4]) -> ()
+189 felt252_const<10>() -> ([6])
+190 felt252_sub([1], [6]) -> ([7])
+191 store_temp<felt252>([7]) -> ([7])
+192 felt252_is_zero([7]) { fallthrough() 197([8]) }
+"]
+    1 -> 2 
+    1 -> 3 
+    2[label="BB 2
+193 branch_align() -> ()
+194 felt252_const<3>() -> ([9])
+195 store_temp<felt252>([9]) -> ([10])
+196 jump() { 201() }
+"]
+    2 -> 4 
+    3[label="BB 3
+197 branch_align() -> ()
+198 drop<NonZero<felt252>>([8]) -> ()
+199 felt252_const<4>() -> ([11])
+200 store_temp<felt252>([11]) -> ([10])
+"]
+    3 -> 4 
+    4[label="BB 4
+201 struct_construct<Tuple<felt252>>([10]) -> ([12])
+202 enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([12]) -> ([13])
+203 store_temp<core::panics::PanicResult::<(core::felt252,)>>([13]) -> ([14])
+204 return([14])
+"]
+    5[label="BB 5
+205 branch_align() -> ()
+206 drop<felt252>([1]) -> ()
+207 enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([5]) -> ([15])
+208 store_temp<core::panics::PanicResult::<(core::felt252,)>>([15]) -> ([16])
+209 return([16])
+"]
+}
