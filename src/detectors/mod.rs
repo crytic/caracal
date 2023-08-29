@@ -1,5 +1,6 @@
 use self::detector::Detector;
 
+pub mod array_use_after_pop_front;
 pub mod controlled_library_call;
 pub mod dead_code;
 pub mod detector;
@@ -14,6 +15,7 @@ pub mod unused_return;
 
 pub fn get_detectors() -> Vec<Box<dyn Detector>> {
     vec![
+        Box::<array_use_after_pop_front::ArrayUseAfterPopFront>::default(),
         Box::<controlled_library_call::ControlledLibraryCall>::default(),
         Box::<unused_events::UnusedEvents>::default(),
         Box::<dead_code::DeadCode>::default(),
