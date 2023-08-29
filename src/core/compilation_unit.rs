@@ -9,7 +9,9 @@ use cairo_lang_sierra::program::{
     Function as SierraFunction, GenStatement, Program, Statement as SierraStatement,
 };
 use cairo_lang_sierra::program_registry::ProgramRegistry;
-use cairo_lang_starknet::abi::{Contract, Item::Function as AbiFunction};
+use cairo_lang_starknet::abi::{
+    Contract, Item::Function as AbiFunction, Item::L1Handler as AbiL1Handler,
+};
 
 pub struct CompilationUnit {
     /// The compiled sierra program
@@ -123,17 +125,24 @@ impl CompilationUnit {
     fn set_functions_type(&mut self) {
         let mut external_functions = HashSet::new();
         let mut constructors = HashSet::new();
-        let mut l1_handler_functions = HashSet::new();
 
         // Gather all the external/l1_handler functions and the constructor of each contract
         for f in self.sierra_program.funcs.iter() {
             let full_name = f.id.to_string();
-            if full_name.contains("::__external::") {
+            if full_name.contains("::__wrapper_") {
+                // This case happens for cairo >= 2.2.0
+                let function_name = full_name.replace("__wrapper_", "");
+                if function_name.ends_with("::constructor") {
+                    constructors.insert(function_name);
+                } else {
+                    external_functions.insert(function_name);
+                }
+            } else if full_name.contains("::__external::") {
                 external_functions.insert(full_name.replace("__external::", ""));
             } else if full_name.contains("::__constructor::") {
                 constructors.insert(full_name.replace("__constructor::", ""));
             } else if full_name.contains("::__l1_handler::") {
-                l1_handler_functions.insert(full_name.replace("__l1_handler::", ""));
+                external_functions.insert(full_name.replace("__l1_handler::", ""));
             }
         }
 
@@ -147,6 +156,8 @@ impl CompilationUnit {
             } else if full_name.contains("::__external::")
                 || full_name.contains("::__constructor::")
                 || full_name.contains("::__l1_handler::")
+                // For cairo >= 2.2.0
+                || full_name.contains("::__wrapper_")
             {
                 f.set_ty(Type::Wrapper);
             } else if constructors.contains(&full_name) {
@@ -157,26 +168,37 @@ impl CompilationUnit {
                 let function_name = full_name.rsplit_once("::").unwrap().1;
 
                 for item in self.abi.items.iter() {
-                    if let AbiFunction(function) = item {
-                        if function.name == function_name {
-                            match function.state_mutability {
-                                cairo_lang_starknet::abi::StateMutability::External => {
-                                    f.set_ty(Type::External);
-                                    break;
-                                }
-                                cairo_lang_starknet::abi::StateMutability::View => {
-                                    f.set_ty(Type::View);
-                                    break;
+                    match item {
+                        AbiFunction(function) => {
+                            if function.name == function_name {
+                                match function.state_mutability {
+                                    cairo_lang_starknet::abi::StateMutability::External => {
+                                        f.set_ty(Type::External);
+                                        break;
+                                    }
+                                    cairo_lang_starknet::abi::StateMutability::View => {
+                                        f.set_ty(Type::View);
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        AbiL1Handler(l1handler) => {
+                            if l1handler.name == function_name {
+                                f.set_ty(Type::L1Handler);
+                                break;
+                            }
+                        }
+                        _ => (),
                     }
                 }
-            } else if l1_handler_functions.contains(&full_name) {
-                f.set_ty(Type::L1Handler);
             } else if full_name.ends_with("::InternalContractStateImpl::address")
                 || full_name.ends_with("::InternalContractStateImpl::read")
                 || full_name.ends_with("::InternalContractStateImpl::write")
+                // Following cases for cairo >= 2.2.0
+                || full_name.ends_with("::InternalContractMemberStateImpl::address")
+                || full_name.ends_with("::InternalContractMemberStateImpl::read")
+                || full_name.ends_with("::InternalContractMemberStateImpl::write")
             {
                 // A user defined function named address/read/write can be incorrectly set to Storage
                 f.set_ty(Type::Storage);
