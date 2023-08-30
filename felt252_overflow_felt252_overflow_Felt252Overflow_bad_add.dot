@@ -1,7 +1,0 @@
-digraph "felt252_overflow_felt252_overflow_Felt252Overflow_bad_add.dot" {
-    0[label="BB 0
-136 felt252_add([0], [1]) -> ([2])
-137 store_temp<felt252>([2]) -> ([3])
-138 return([3])
-"]
-}

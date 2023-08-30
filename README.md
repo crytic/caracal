@@ -15,7 +15,7 @@ Caracal is a static analyzer tool over the SIERRA representation for Starknet sm
 Precompiled binaries are available on our [releases page](https://github.com/crytic/caracal/releases). If you are using Cairo compiler 1.x.x uses the binary v0.1.x otherwise if you are using the Cairo compiler 2.x.x uses v0.2.x.
 
 ### Building from source
-You need the Rust compiler and Cargo.  
+You need the Rust compiler and Cargo.
 Building from git:
 ```bash
 cargo install --git https://github.com/crytic/caracal --profile release --force
@@ -37,7 +37,7 @@ List printers:
 caracal printers
 ```
 ### Standalone
-To use with a standalone cairo file you need to pass the path to the [corelib](https://github.com/starkware-libs/cairo/tree/main/corelib) library either with the `--corelib` cli option or by setting the `CORELIB_PATH` environment variable.  
+To use with a standalone cairo file you need to pass the path to the [corelib](https://github.com/starkware-libs/cairo/tree/main/corelib) library either with the `--corelib` cli option or by setting the `CORELIB_PATH` environment variable.
 Run detectors:
 ```bash
 caracal detect path/file/to/analyze --corelib path/to/corelib/src
@@ -55,7 +55,7 @@ sierra = true
 [cairo]
 sierra-replace-ids = true
 ```
-Then pass the path to the directory where Scarb.toml resides.  
+Then pass the path to the directory where Scarb.toml resides.
 Run detectors:
 ```bash
 caracal detect path/to/dir
@@ -79,11 +79,11 @@ Num | Detector | What it Detects | Impact | Confidence | Cairo
 9 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
 10 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
 11 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
-
-The Cairo column represent the compiler version for which the detector is valid.
+12 | `felt-252-overflow` | Detect user controlled operations with felt252 type, which is not overflow safe | High | Medium | 1 & 2
+The Cairo column represent the compiler version(s) for which the detector is valid.
 
 ## Printers
-- `cfg`: Export the CFG of each function in a .dot file
+- `cfg`: Export the CFG of each function to a .dot file
 - `callgraph`: Export function call graph to a .dot file
 
 ## How to contribute

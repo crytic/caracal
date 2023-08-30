@@ -328,7 +328,19 @@ impl CompilationUnit {
                                 .collect();
 
                             // Calling function's parameters
-                            for param in calling_function.params().skip(1) {
+
+                            for param in calling_function.params() {
+                                // If this parameter is ContractState, we don't need to propogate taints
+                                if param
+                                    .ty
+                                    .debug_name
+                                    .as_ref()
+                                    .unwrap()
+                                    .to_string()
+                                    .contains("ContractState")
+                                {
+                                    continue;
+                                }
                                 // Check if the arguments used to call the private function are tainted by the calling function's parameters
                                 for sink in external_taint.taints_any_sinks_variable(
                                     &WrapperVariable::new(

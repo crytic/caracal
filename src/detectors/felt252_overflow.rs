@@ -9,16 +9,8 @@ use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::{core::CoreConcreteLibfunc, felt252::Felt252Concrete};
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::Statement as SierraStatement;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
-pub struct SubVarInfo<'a> {
-    /// The libfunc used
-    libfunc: &'a SierraStatement,
-    /// The parameters used
-    params: &'a [ParamSignature],
-    /// Arguments to the sub
-    args: &'a Vec<VarId>,
-}
 #[derive(Default)]
 pub struct Felt252Overflow {}
 
@@ -47,9 +39,10 @@ impl Detector for Felt252Overflow {
             let functions = compilation_unit.functions_user_defined();
             // Iterate through the functions and find binary operations
             for f in functions {
-                let mut sub_vars = HashMap::new();
                 let name = f.name();
-                for stmt in f.get_statements().iter() {
+                // Vector for looking up future instructions
+                let statements: Vec<SierraStatement> = f.get_statements().to_owned();
+                for (index, stmt) in statements.iter().enumerate() {
                     if let SierraStatement::Invocation(invoc) = stmt {
                         // Get the concrete libfunc called
                         let libfunc = compilation_unit
@@ -66,16 +59,50 @@ impl Detector for Felt252Overflow {
                                     Felt252BinaryOperator::Sub => {
                                         // Get the return value of the sub statement
                                         let ret_value = &invoc.branches[0].results[0];
-                                        let sub_struct = SubVarInfo {
-                                            libfunc: stmt,
-                                            params: op.param_signatures(),
-                                            args: &invoc.args,
-                                        };
-                                        // Add to HashMap to track return values for later
-                                        sub_vars.insert(ret_value, sub_struct);
-                                        // Continue the loop, we'll analyze this after we check felt252_is_zero
-                                        continue;
+
+                                        // Look two instructions in advance, since pattern will always be sub -> store_temp -> is_zero
+
+                                        if let Some(SierraStatement::Invocation(sub_statement)) =
+                                            statements.get(index + 2)
+                                        {
+                                            // Check if felt252_is_zero uses return param of sub instruction
+
+                                            let libfunc_sub = compilation_unit
+                                                .registry()
+                                                .get_libfunc(&sub_statement.libfunc_id)
+                                                .expect(
+                                                    "Library function not found in the registry",
+                                                );
+                                            if let CoreConcreteLibfunc::Felt252(
+                                                Felt252Concrete::IsZero(_z),
+                                            ) = libfunc_sub
+                                            {
+                                                let user_params = &sub_statement.args;
+                                                if !user_params.contains(ret_value) {
+                                                    // This is a geniuine sub instruction since it isn't used by felt252_is_zero
+                                                    // Maybe we can just continue here since is_zero is only for checking branches?
+                                                    self.check_felt252_tainted(
+                                                        &mut results,
+                                                        compilation_unit,
+                                                        op.param_signatures(),
+                                                        stmt,
+                                                        invoc.args.clone(),
+                                                        &name,
+                                                    );
+                                                }
+                                            } else {
+                                                self.check_felt252_tainted(
+                                                    &mut results,
+                                                    compilation_unit,
+                                                    op.param_signatures(),
+                                                    stmt,
+                                                    invoc.args.clone(),
+                                                    &name,
+                                                )
+                                            }
+                                        }
                                     }
+
                                     _ => {
                                         self.check_felt252_tainted(
                                             &mut results,
@@ -88,24 +115,64 @@ impl Detector for Felt252Overflow {
                                     }
                                 }
                             }
-                        }
-                        // Check if felt252_is_zero uses return param of sub instruction
-                        if let CoreConcreteLibfunc::Felt252(Felt252Concrete::IsZero(op)) = libfunc {
-                            let user_params = filter_builtins_from_arguments(
-                                op.param_signatures(),
-                                invoc.args.clone(),
-                            );
-                            for (k, v) in &sub_vars {
-                                if !user_params.contains(k) {
-                                    // This is a geniuine sub instruction since it isn't used by felt252_is_zero
-                                    self.check_felt252_tainted(
-                                        &mut results,
-                                        compilation_unit,
-                                        v.params,
-                                        v.libfunc,
-                                        v.args.clone(),
-                                        &name,
-                                    );
+                            if let Felt252BinaryOperationConcrete::WithConst(var) = op {
+                                match var.operator {
+                                    // Do the same as above but for constant case
+                                    Felt252BinaryOperator::Sub => {
+                                        // Get the return value of the sub statement
+                                        let ret_value = &invoc.branches[0].results[0];
+
+                                        // Look two instructions in advance
+
+                                        if let Some(SierraStatement::Invocation(sub_statement)) =
+                                            statements.get(index + 2)
+                                        {
+                                            // Check if felt252_is_zero uses return param of sub instruction
+
+                                            let libfunc_sub = compilation_unit
+                                                .registry()
+                                                .get_libfunc(&sub_statement.libfunc_id)
+                                                .expect(
+                                                    "Library function not found in the registry",
+                                                );
+                                            if let CoreConcreteLibfunc::Felt252(
+                                                Felt252Concrete::IsZero(_z),
+                                            ) = libfunc_sub
+                                            {
+                                                let user_params = &sub_statement.args;
+                                                if !user_params.contains(ret_value) {
+                                                    self.check_felt252_tainted(
+                                                        &mut results,
+                                                        compilation_unit,
+                                                        op.param_signatures(),
+                                                        stmt,
+                                                        invoc.args.clone(),
+                                                        &name,
+                                                    );
+                                                }
+                                            } else {
+                                                self.check_felt252_tainted(
+                                                    &mut results,
+                                                    compilation_unit,
+                                                    op.param_signatures(),
+                                                    stmt,
+                                                    invoc.args.clone(),
+                                                    &name,
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    _ => {
+                                        self.check_felt252_tainted(
+                                            &mut results,
+                                            compilation_unit,
+                                            op.param_signatures(),
+                                            stmt,
+                                            invoc.args.clone(),
+                                            &name,
+                                        );
+                                    }
                                 }
                             }
                         }
@@ -155,7 +222,7 @@ impl Felt252Overflow {
             });
         } else {
             let msg = format!(
-                    "The function {} uses the felt 252 operation {} with the user-controlled parameters: {}",
+                    "The function {} uses the felt252 operation {} with the user-controlled parameters: {}",
                     &name,
                     libfunc,
                     taints

@@ -35,6 +35,7 @@ mod Felt252Overflow {
     }
 
     fn bad_add(param1:felt252, param2:felt252) -> felt252{
+        test_assert(param1);
         param1 + param2
     }
 
@@ -56,7 +57,6 @@ mod Felt252Overflow {
     fn test_assert(p: felt252) {
         assert(4 != 0,'bad');
         assert(p == 3, 'ok');
-
     }
 
 }

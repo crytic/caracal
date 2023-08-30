@@ -8,31 +8,19 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: High,
         name: "felt252-overflow",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add uses the felt252 operation felt252_add([0], [1]) -> ([2]), which is not overflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add uses the felt 252 operation felt252_add([0], [1]) -> ([6]) with the user-controlled parameters: [0],[1]",
     },
     Result {
         impact: High,
         name: "felt252-overflow",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt 252 operation felt252_add([17], [3]) -> ([21]) with the user-controlled parameters: [3]",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt 252 operation felt252_add([17], [3]) -> ([23]) with the user-controlled parameters: [3]",
     },
     Result {
         impact: High,
         name: "felt252-overflow",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt 252 operation felt252_add([19], [20]) -> ([18]) with the user-controlled parameters: [19],[20]",
-    },
-    Result {
-        impact: High,
-        name: "felt252-overflow",
-        confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt 252 operation felt252_add([21], [4]) -> ([22]) with the user-controlled parameters: [21],[4]",
-    },
-    Result {
-        impact: High,
-        name: "felt252-overflow",
-        confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_uncontrolled uses the felt252 operation felt252_add([3], [4]) -> ([5]), which is not overflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt 252 operation felt252_add([23], [4]) -> ([24]) with the user-controlled parameters: [23],[4]",
     },
     Result {
         impact: High,
@@ -71,9 +59,15 @@ input_file: tests/detectors/felt252_overflow.cairo
         message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_sub_uncontrolled uses the felt252 operation felt252_sub([3], [4]) -> ([5]), which is not overflow safe",
     },
     Result {
-        impact: Low,
-        name: "dead-code",
+        impact: High,
+        name: "felt252-overflow",
         confidence: Medium,
-        message: "Function bad_add defined in felt252_overflow::felt252_overflow::Felt252Overflow is never used",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::test_sub_assert uses the felt252 operation felt252_sub([11], [12]) -> ([13]), which is not overflow safe",
+    },
+    Result {
+        impact: Medium,
+        name: "unused-return",
+        confidence: Medium,
+        message: "Return value unused for the function call function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::bad_add>([19], [20]) -> ([18]) in felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled",
     },
 ]
