@@ -214,65 +214,148 @@ impl ArrayUseAfterPopFront {
         function: &Function,
         bad_array: &WrapperVariable,
     ) -> bool {
+        // No need to check remaining statements of the caller function
+        // as returning a bad array is already a use of the bad array
+        // if the current function is not a loop function
+        match function.ty() {
+            Type::Loop => self.check_loop_returns(compilation_unit, function, bad_array),
+            _ => self.check_non_loop_returns(compilation_unit, function, bad_array),
+        }
+    }
+
+    fn check_loop_returns(
+        &self,
+        compilation_unit: &CompilationUnit,
+        function: &Function,
+        bad_array: &WrapperVariable,
+    ) -> bool {
+        // We can not find the array from the return types of the function
+        // We assume that the array is returned at the same index as it was taken on
+        let return_array_indices: Vec<usize> = function
+            .params()
+            .enumerate()
+            .filter_map(|(i, param)| {
+                let param_type = compilation_unit
+                    .registry()
+                    .get_type(&param.ty)
+                    .expect("Type not found in the registry");
+
+                if let CoreTypeConcrete::Array(_) = param_type {
+                    return Some(i);
+                }
+                None
+            })
+            .collect();
+
+        // In case the functon is a loop function, we need to check
+        // the remaining statements of the caller function to see if they used the bad array
+        compilation_unit
+            .functions_user_defined()
+            .any(|maybe_caller| {
+                maybe_caller
+                    .loop_functions_calls()
+                    .flat_map(|f| {
+                        if let GenStatement::Invocation(invoc) = f {
+                            let lib_func = compilation_unit
+                                .registry()
+                                .get_libfunc(&invoc.libfunc_id)
+                                .expect("Library function not found in the registry");
+
+                            if let CoreConcreteLibfunc::FunctionCall(f_called) = lib_func {
+                                if function.name().as_str()
+                                    == f_called.function.id.debug_name.as_ref().unwrap()
+                                {
+                                    return return_array_indices
+                                        .iter()
+                                        .map(|i| {
+                                            WrapperVariable::new(
+                                                maybe_caller.name(),
+                                                invoc.branches[0].results[*i].clone(),
+                                            )
+                                        })
+                                        .collect();
+                                }
+                            }
+                        }
+                        Vec::new()
+                    })
+                    .any(|caller_bad_array| {
+                        self.check_statements(compilation_unit, maybe_caller, &caller_bad_array, 0)
+                            || self.check_calls(
+                                compilation_unit,
+                                function,
+                                bad_array,
+                                &mut maybe_caller.private_functions_calls(),
+                            )
+                            || self.check_calls(
+                                compilation_unit,
+                                function,
+                                bad_array,
+                                &mut maybe_caller.library_functions_calls(),
+                            )
+                            || self.check_calls(
+                                compilation_unit,
+                                function,
+                                bad_array,
+                                &mut maybe_caller.external_functions_calls(),
+                            )
+                            || self.check_calls(
+                                compilation_unit,
+                                function,
+                                bad_array,
+                                &mut maybe_caller.events_emitted(),
+                            )
+                    })
+            })
+    }
+
+    fn check_non_loop_returns(
+        &self,
+        compilation_unit: &CompilationUnit,
+        function: &Function,
+        bad_array: &WrapperVariable,
+    ) -> bool {
         let taint = compilation_unit.get_taint(&function.name()).unwrap();
 
-        let returns_array = function.returns().any(|r| {
-            let return_type = compilation_unit
-                .registry()
-                .get_type(r)
-                .expect("Type not found in the registry");
+        let return_array_indices: Vec<usize> = function
+            .returns_all()
+            .enumerate()
+            .flat_map(|(i, r)| {
+                let return_type = compilation_unit
+                    .registry()
+                    .get_type(r)
+                    .expect("Type not found in the registry");
 
-            if let CoreTypeConcrete::Array(_) = return_type {
-                return true;
-            }
-            false
-        });
+                if let CoreTypeConcrete::Array(_) = return_type {
+                    return Some(i);
+                }
+                None
+            })
+            .collect();
 
-        let returns_bad_array = returns_array
-            && function.get_statements().iter().any(|s| {
+        // Not returning any array
+        if return_array_indices.is_empty() {
+            return false;
+        }
+
+        // Not sure if it is required because taint analysis adds all the arugments as
+        // tainters of the all the return values.
+        let returned_bad_arrays: Vec<WrapperVariable> = function
+            .get_statements()
+            .iter()
+            .flat_map(|s| {
                 if let GenStatement::Return(return_vars) = s {
                     let sinks: HashSet<WrapperVariable> = return_vars
                         .iter()
                         .map(|v| WrapperVariable::new(function.name(), v.clone()))
                         .collect();
 
-                    return taint.taints_any_sinks(bad_array, &sinks);
+                    return taint.taints_any_sinks_variable(bad_array, &sinks);
                 }
-                false
-            });
+                Vec::new()
+            })
+            .collect();
 
-        // No need to check remaining statements of the caller function
-        // as returning a bad array is already a use of the bad array
-        // if the current function is not a loop function
-        if returns_bad_array && !matches!(function.ty(), Type::Loop) {
-            return true;
-        }
-
-        // In case the functon is a loop function, we need to check
-        // the remaining statements of the caller function to see if they used the bad array
-        compilation_unit.functions_user_defined().any(|maybe_caller| {
-            let is_caller = maybe_caller.loop_functions_calls().any(|f| {
-                if let GenStatement::Invocation(invoc) = f {
-                    let lib_func = compilation_unit
-                        .registry()
-                        .get_libfunc(&invoc.libfunc_id)
-                        .expect("Library function not found in the registry");
-
-                    if let CoreConcreteLibfunc::FunctionCall(f_called) = lib_func {
-                        if function.name().as_str() == f_called.function.id.debug_name.as_ref().unwrap() {
-                            //invoc.branches[0].results
-                            
-                        }
-                    }
-                }
-                false
-            });
-
-            if is_caller {
-                return self.check_statements(compilation_unit, maybe_caller, bad_array, 0);
-            }
-
-            false
-        })
+        !returned_bad_arrays.is_empty()
     }
 }

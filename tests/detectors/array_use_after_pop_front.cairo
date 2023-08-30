@@ -57,6 +57,15 @@ mod ArrayUseAfterPopFront {
     }
 
     #[external(v0)]
+    fn bad_return(ref self: ContractState) -> Array<u128> {
+        let mut arr = ArrayTrait::<u128>::new();
+        arr.append(1);
+
+        let b = arr.pop_front();
+        return arr;
+    }
+
+    #[external(v0)]
     fn good(self: @ContractState) {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
