@@ -1,8 +1,15 @@
 ---
 source: tests/integration_tests.rs
 expression: results
+input_file: tests/detectors/unused_return.cairo
 ---
 [
+    Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::f_5 uses the felt252 operation felt252_mul([9], [10]) -> ([11]), which is not overflow safe",
+    },
     Result {
         impact: Medium,
         name: "unused-return",

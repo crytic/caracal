@@ -1,8 +1,21 @@
 ---
 source: tests/integration_tests.rs
 expression: results
+input_file: tests/detectors/unenforced_view.cairo
 ---
 [
+    Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function unenforced_view::unenforced_view::UnenforcedView::f3 uses the felt252 operation felt252_sub([3], [12]) -> ([13]), which is not overflow safe",
+    },
+    Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function unenforced_view::unenforced_view::UnenforcedView::recursive_storage_write_direct uses the felt252 operation felt252_sub([3], [19]) -> ([20]) with the user-controlled parameters: [3], which is not overflow safe",
+    },
     Result {
         impact: Medium,
         name: "unenforced-view",

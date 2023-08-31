@@ -1,8 +1,33 @@
 ---
 source: tests/integration_tests.rs
 expression: results
+input_file: tests/detectors/unchecked_l1_handler_from.cairo
 ---
 [
+    Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::bad uses the felt252 operation felt252_add([0], [1]) -> ([2]) with the user-controlled parameters: [0], which is not overflow safe",
+    },
+    Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::check_recursive uses the felt252 operation felt252_add([3], [31]) -> ([32]), which is not overflow safe",
+    },
+    Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::check_recursive uses the felt252 operation felt252_sub([11], [9]) -> ([10]), which is not overflow safe",
+    },
+    Result {
+        impact: High,
+        name: "felt252-overflow",
+        confidence: Medium,
+        message: "The function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::good3 uses the felt252 operation felt252_add([13], [14]) -> ([15]) with the user-controlled parameters: [13], which is not overflow safe",
+    },
     Result {
         impact: High,
         name: "unchecked-l1-handler-from",
