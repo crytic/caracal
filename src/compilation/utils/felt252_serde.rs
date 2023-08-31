@@ -1,5 +1,6 @@
 // Taken from https://github.com/starkware-libs/cairo/blob/0a3e9dec15c2a853559d233247a253871e7bb35a/crates/cairo-lang-starknet/src/felt252_serde.rs
 // Removed the serialization process
+
 use crate::compilation::utils::felt252_vec_compression::decompress;
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::Secp256GetPointFromXLibfunc;

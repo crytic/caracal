@@ -17,8 +17,8 @@ smol_str = "0.2"
 num-integer = "0.1"
 termcolor = "1.2"
 graphviz-rust = "0.6.2"
+cairo-felt = "0.8.7"
 thiserror = "1.0.47"
-cairo-felt = "0.8.6"
 
 cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.2.0" }
 cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.2.0" }
