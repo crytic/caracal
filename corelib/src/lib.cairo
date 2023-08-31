@@ -1,16 +1,16 @@
 mod traits;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
-    PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
-    TupleSize0PartialEq, TupleSize1Copy, TupleSize1Drop, TupleSize1PartialEq, TupleSize2Copy,
-    TupleSize2Drop, TupleSize3Copy, TupleSize3Drop, TupleSize4Copy, TupleSize4Drop, Not, Neg, Into,
+    PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
 use serde::Serde;
-use array::SpanTrait;
 
-#[derive(Copy, Drop)]
+type usize = u32;
+
+#[derive(Copy, Drop, Default)]
 enum bool {
+    #[default]
     False,
     True,
 }
@@ -28,39 +28,39 @@ impl BoolSerde of Serde<bool> {
     }
 }
 
-extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitAnd of BitAnd<bool> {
     #[inline(always)]
     fn bitand(lhs: bool, rhs: bool) -> bool {
-        let (r, ) = bool_and_impl(lhs, rhs);
+        let (r,) = bool_and_impl(lhs, rhs);
         r
     }
 }
 
-extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitOr of BitOr<bool> {
     #[inline(always)]
     fn bitor(lhs: bool, rhs: bool) -> bool {
-        let (r, ) = bool_or_impl(lhs, rhs);
+        let (r,) = bool_or_impl(lhs, rhs);
         r
     }
 }
 
-extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
 #[inline(always)]
 impl BoolNot of Not<bool> {
     #[inline(always)]
     fn not(a: bool) -> bool implicits() nopanic {
-        let (r, ) = bool_not_impl(a);
+        let (r,) = bool_not_impl(a);
         r
     }
 }
 
-extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitXor of BitXor<bool> {
     #[inline(always)]
     fn bitxor(lhs: bool, rhs: bool) -> bool {
-        let (r, ) = bool_xor_impl(lhs, rhs);
+        let (r,) = bool_xor_impl(lhs, rhs);
         r
     }
 }
@@ -162,7 +162,7 @@ extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Neg of Neg<felt252> {
     #[inline(always)]
     fn neg(a: felt252) -> felt252 {
-        a * felt252_const::<-1>()
+        a * -1
     }
 }
 
@@ -217,16 +217,14 @@ use box::{Box, BoxTrait};
 
 // Nullable
 mod nullable;
-use nullable::{Nullable, match_nullable, null, nullable_from_box};
+use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
-// Arrays.
+// Array.
 mod array;
 use array::{Array, ArrayTrait};
-type usize = u32;
 
 // Span.
-use array::Span;
-
+use array::{Span, SpanTrait};
 
 // Dictionary.
 mod dict;
@@ -236,11 +234,11 @@ use dict::{
 
 // Result.
 mod result;
-use result::Result;
+use result::{Result, ResultTrait};
 
 // Option.
 mod option;
-use option::Option;
+use option::{Option, OptionTrait};
 
 // Clone.
 mod clone;
@@ -297,9 +295,12 @@ mod serde;
 
 // Hash functions.
 mod hash;
-use hash::{pedersen, Pedersen};
 
 mod keccak;
+
+// Pedersen
+mod pedersen;
+use pedersen::Pedersen;
 
 // Poseidon
 mod poseidon;
@@ -321,7 +322,14 @@ use zeroable::{Zeroable, NonZero};
 
 // bytes31.
 mod bytes_31;
-use bytes_31::{bytes31, bytes31_const, Bytes31IntoFelt252, Felt252TryIntoBytes31};
+use bytes_31::{
+    bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
+    Felt252TryIntoBytes31
+};
+
+// BytesArray.
+mod byte_array;
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
 
 #[cfg(test)]
 mod test;

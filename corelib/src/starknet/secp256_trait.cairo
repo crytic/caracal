@@ -1,6 +1,6 @@
 use array::ArrayTrait;
 use keccak::keccak_u256s_be_inputs;
-use math::u256_div_mod_n;
+use math::{u256_mul_mod_n, inv_mod};
 use option::OptionTrait;
 use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
 use traits::{Into, TryInto};
@@ -19,9 +19,12 @@ struct Signature {
 }
 
 
-/// Creates an ECDSA signature from the v, r and s values.
+/// Creates an ECDSA signature from the `v`, `r` and `s` values.
+/// `v` is the sum of an odd number and the parity of the y coordinate of the ec point whose x
+/// coordinate is `r`.
+/// See https://eips.ethereum.org/EIPS/eip-155 for more details.
 fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
-    Signature { r, s, y_parity: v % 2 == 1,  }
+    Signature { r, s, y_parity: v % 2 == 0 }
 }
 
 trait Secp256Trait<Secp256Point> {
@@ -61,10 +64,11 @@ fn recover_public_key<
     // where the divisions by `r` are modulo `N` (the size of the curve).
 
     let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
-    let r_nz = r.try_into().unwrap();
-    let u1 = u256_div_mod_n(msg_hash, r_nz, n_nz).unwrap();
+    let r_inv = inv_mod(r.try_into().unwrap(), n_nz).unwrap();
+
+    let u1 = u256_mul_mod_n(msg_hash, r_inv, n_nz);
     let minus_u1 = secp256_ec_negate_scalar::<Secp256Point>(u1);
-    let u2 = u256_div_mod_n(s, r_nz, n_nz).unwrap();
+    let u2 = u256_mul_mod_n(s, r_inv, n_nz);
 
     let minus_point1 = generator_point.mul(minus_u1).unwrap_syscall();
 
@@ -85,7 +89,34 @@ fn secp256_ec_negate_scalar<
 }
 
 
-/// Verifies a Secp256 ECDSA signature.
+/// Checks a Secp256 ECDSA signature.
+/// Also verifies that r and s components of the signature are in the range (0, N),
+/// where N is the size of the curve.
+/// Returns a Result with an error string if the signature is invalid.
+fn is_eth_signature_valid<
+    Secp256Point,
+    impl Secp256PointDrop: Drop<Secp256Point>,
+    impl Secp256Impl: Secp256Trait<Secp256Point>,
+    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+>(
+    msg_hash: u256, signature: Signature, eth_address: EthAddress
+) -> Result<(), felt252> {
+    if !is_signature_entry_valid::<Secp256Point>(signature.r) {
+        return Result::Err('Signature out of range');
+    }
+    if !is_signature_entry_valid::<Secp256Point>(signature.s) {
+        return Result::Err('Signature out of range');
+    }
+
+    let public_key_point = recover_public_key::<Secp256Point>(:msg_hash, :signature).unwrap();
+    let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
+    if eth_address != calculated_eth_address {
+        return Result::Err('Invalid signature');
+    }
+    Result::Ok(())
+}
+
+/// Asserts that a Secp256 ECDSA signature is valid.
 /// Also verifies that r and s components of the signature are in the range (0, N),
 /// where N is the size of the curve.
 fn verify_eth_signature<
@@ -96,12 +127,10 @@ fn verify_eth_signature<
 >(
     msg_hash: u256, signature: Signature, eth_address: EthAddress
 ) {
-    assert(is_signature_entry_valid::<Secp256Point>(signature.r), 'Signature out of range');
-    assert(is_signature_entry_valid::<Secp256Point>(signature.s), 'Signature out of range');
-
-    let public_key_point = recover_public_key::<Secp256Point>(:msg_hash, :signature).unwrap();
-    let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
-    assert(eth_address == calculated_eth_address, 'Invalid signature');
+    match is_eth_signature_valid::<Secp256Point>(:msg_hash, :signature, :eth_address) {
+        Result::Ok(()) => {},
+        Result::Err(err) => panic_with_felt252(err),
+    }
 }
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.

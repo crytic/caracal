@@ -14,7 +14,7 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: High,
         name: "felt252-overflow",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt252 operation felt252_add([17], [3]) -> ([23]) with the user-controlled parameters: [3], which is not overflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt252 operation felt252_add([22], [3]) -> ([23]) with the user-controlled parameters: [3], which is not overflow safe",
     },
     Result {
         impact: High,
@@ -62,12 +62,12 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: High,
         name: "felt252-overflow",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::test_sub_assert uses the felt252 operation felt252_sub([1], [12]) -> ([13]), which is not overflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::test_sub_assert uses the felt252 operation felt252_sub([1], [12]) -> ([13]) with the user-controlled parameters: [1], which is not overflow safe",
     },
     Result {
         impact: Medium,
         name: "unused-return",
         confidence: Medium,
-        message: "Return value unused for the function call function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::bad_add>([19], [20]) -> ([18]) in felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled",
+        message: "Return value unused for the function call function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::bad_add>([18], [19]) -> ([17]) in felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled",
     },
 ]
