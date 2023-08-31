@@ -5,7 +5,9 @@ use gas::withdraw_gas;
 use option::OptionTrait;
 use serde::Serde;
 
+#[derive(Drop)]
 extern type Array<T>;
+
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
@@ -86,7 +88,7 @@ impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
         let length = *serialized.pop_front()?;
-        let mut arr = Default::default();
+        let mut arr = array![];
         deserialize_array_helper(ref serialized, arr, length)
     }
 }
@@ -112,9 +114,6 @@ fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
     curr_output.append(TSerde::deserialize(ref serialized)?);
     deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
-
-// Impls for common generic types
-impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>;
 
 // Span.
 struct Span<T> {
@@ -204,5 +203,39 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
             };
         };
         response
+    }
+}
+
+impl ArrayPartialEq<T, impl PartialEqImpl: PartialEq<T>> of PartialEq<Array<T>> {
+    fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
+        lhs.span() == rhs.span()
+    }
+    fn ne(lhs: @Array<T>, rhs: @Array<T>) -> bool {
+        !(lhs == rhs)
+    }
+}
+
+impl SpanPartialEq<T, impl PartialEqImpl: PartialEq<T>> of PartialEq<Span<T>> {
+    fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
+        if (*lhs).len() != (*rhs).len() {
+            return false;
+        }
+        let mut lhs_span = *lhs;
+        let mut rhs_span = *rhs;
+        loop {
+            match lhs_span.pop_front() {
+                Option::Some(lhs_v) => {
+                    if lhs_v != rhs_span.pop_front().unwrap() {
+                        break false;
+                    }
+                },
+                Option::None => {
+                    break true;
+                },
+            };
+        }
+    }
+    fn ne(lhs: @Span<T>, rhs: @Span<T>) -> bool {
+        !(lhs == rhs)
     }
 }

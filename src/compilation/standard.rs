@@ -9,7 +9,9 @@ use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::abi::{AbiBuilder, Contract};
+use cairo_lang_starknet::compiler_version::current_compiler_version_id;
 use cairo_lang_starknet::contract::find_contracts;
+use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -17,8 +19,7 @@ use super::ProgramCompiled;
 use crate::core::core_unit::CoreOpts;
 
 pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
-    // NOTE: compiler_version module is not public so we need to update it as we update the Cairo version we use
-    println!("Compiling with starknet-compile 2.1.0.");
+    println!("Compiling with cairo {}.", current_compiler_version_id());
 
     // corelib cli option has priority over the environment variable
     let corelib = match opts.corelib {
@@ -33,7 +34,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
 
     // Needed to pass the correct corelib path
     let project_config = ProjectConfig {
-        corelib: Some(Directory(corelib)),
+        corelib: Some(Directory::Real(corelib)),
         base_path: "".into(),
         content: ProjectConfigContent {
             crate_roots: OrderedHashMap::default(),
@@ -42,7 +43,8 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
 
     let mut db = RootDatabase::builder()
         .with_project_config(project_config)
-        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
         .build()?;
 
     let mut compiler_config = CompilerConfig::default();
