@@ -79,7 +79,7 @@ Num | Detector | What it Detects | Impact | Confidence | Cairo
 9 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
 10 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
 11 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
-12 | `felt-252-overflow` | Detect user controlled operations with felt252 type, which is not overflow safe | High | Medium | 1 & 2
+12 | `felt-252-overflow` | Detect user controlled operations with felt252 type, which is not overflow safe | Medium | High | 1 & 2
 The Cairo column represent the compiler version(s) for which the detector is valid.
 
 ## Printers

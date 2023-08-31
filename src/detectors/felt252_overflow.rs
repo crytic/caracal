@@ -194,6 +194,7 @@ impl Felt252Overflow {
         name: &String,
     ) {
         let user_params = filter_builtins_from_arguments(params, args);
+        println!("{:?}", user_params);
         let mut tainted_by: HashSet<&VarId> = HashSet::new();
         let mut taints = String::new();
         for param in user_params.iter() {

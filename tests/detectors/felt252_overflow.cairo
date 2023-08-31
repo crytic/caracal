@@ -51,7 +51,7 @@ mod Felt252Overflow {
             3
         }
         else {
-            4 - 5
+            p - 5
         }
     }
     fn test_assert(p: felt252) {
