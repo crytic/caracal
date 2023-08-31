@@ -78,7 +78,7 @@ impl CompilationUnit {
         for external_function in self
             .functions
             .iter()
-            .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler))
+            .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler | Type::View))
         {
             for param in external_function.params() {
                 parameters.insert(WrapperVariable::new(
