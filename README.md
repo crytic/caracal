@@ -70,16 +70,16 @@ Num | Detector | What it Detects | Impact | Confidence | Cairo
 --- | --- | --- | --- | --- | ---
 1 | `controlled-library-call` | Library calls with a user controlled class hash | High | Medium | 1 & 2
 2 | `unchecked-l1-handler-from` | Detect L1 handlers without from address check | High | Medium | 1 & 2
-4 | `felt-252-overflow` | Detect user controlled operations with felt252 type, which is not overflow safe | High | Medium | 1 & 2
-5 | `reentrancy` | Detect when a storage variable is read before an external call and written after | Medium | Medium | 1 & 2
-6 | `read-only-reentrancy` | Detect when a view function read a storage variable written after an external call | Medium | Medium | 1 & 2
-7 | `unused-events` | Events defined but not emitted | Medium | Medium | 1 & 2
-8 | `unused-return` | Unused return values | Medium | Medium | 1 & 2
-9 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium | 1
-10 | `unused-arguments` | Unused arguments | Low | Medium | 1 & 2
-11 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
-12 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
-11 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
+3 | `felt-252-overflow` | Detect user controlled operations with felt252 type, which is not overflow safe | High | Medium | 1 & 2
+4 | `reentrancy` | Detect when a storage variable is read before an external call and written after | Medium | Medium | 1 & 2
+5 | `read-only-reentrancy` | Detect when a view function read a storage variable written after an external call | Medium | Medium | 1 & 2
+6 | `unused-events` | Events defined but not emitted | Medium | Medium | 1 & 2
+7 | `unused-return` | Unused return values | Medium | Medium | 1 & 2
+8 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium | 1
+9 | `unused-arguments` | Unused arguments | Low | Medium | 1 & 2
+10 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
+11 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
+12 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
 
 The Cairo column represent the compiler version(s) for which the detector is valid.
 
