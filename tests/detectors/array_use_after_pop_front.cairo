@@ -1,6 +1,17 @@
+#[starknet::interface]
+trait IAnotherContract<T> {
+    fn foo(ref self: T, a: Array<u128>) -> u128;
+}
+
 #[starknet::contract]
 mod ArrayUseAfterPopFront {
+    use super::{
+        IAnotherContractDispatcherTrait,
+        IAnotherContractDispatcher,
+        IAnotherContractLibraryDispatcher
+    };
     use array::ArrayTrait;
+    use starknet::ContractAddress;
 
     #[storage]
     struct Storage {}
@@ -63,6 +74,24 @@ mod ArrayUseAfterPopFront {
 
         let b = arr.pop_front();
         return arr;
+    }
+
+    #[external(v0)]
+    fn bad_library_call(ref self: ContractState) -> u128 {
+        let mut arr = ArrayTrait::<u128>::new();
+        arr.append(1);
+
+        let b = arr.pop_front();
+        return IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(arr);
+    }
+
+    #[external(v0)]
+    fn bad_external_call(ref self: ContractState) -> u128 {
+        let mut arr = ArrayTrait::<u128>::new();
+        arr.append(1);
+
+        let b = arr.pop_front();
+        return IAnotherContractDispatcher { contract_address: starknet::contract_address_const::<0>() }.foo(arr);
     }
 
     #[external(v0)]
