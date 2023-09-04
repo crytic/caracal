@@ -71,9 +71,9 @@ impl CallgraphPrinter {
         graph: &mut Graph,
     ) {
         // Add a node/module for the current function (if it doesn't exist yet, we add a module subgraph)
-        println!("{} - {:?}",f.name(),f.ty());
         let name = &f.name();
         let calling_fn_name = match f.ty() {
+            // In the case of loop functions we use the parent function's name
             Type::Loop => name.rsplit_once('[').unwrap().0,
             _ => name
         };
