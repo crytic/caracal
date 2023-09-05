@@ -70,7 +70,7 @@ Num | Detector | What it Detects | Impact | Confidence | Cairo
 --- | --- | --- | --- | --- | ---
 1 | `controlled-library-call` | Library calls with a user controlled class hash | High | Medium | 1 & 2
 2 | `unchecked-l1-handler-from` | Detect L1 handlers without from address check | High | Medium | 1 & 2
-3 | `felt252-overflow` | Detect user controlled operations with felt252 type, which is not overflow safe | High | Medium | 1 & 2
+3 | `felt252-unsafe-arithmetic` | Detect user controlled operations with felt252 type, which is not overflow/underflow safe | Medium | Medium | 1 & 2
 4 | `reentrancy` | Detect when a storage variable is read before an external call and written after | Medium | Medium | 1 & 2
 5 | `read-only-reentrancy` | Detect when a view function read a storage variable written after an external call | Medium | Medium | 1 & 2
 6 | `unused-events` | Events defined but not emitted | Medium | Medium | 1 & 2
