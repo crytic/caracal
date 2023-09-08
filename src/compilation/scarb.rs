@@ -39,7 +39,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
                 .unwrap()
                 .to_str()
                 .unwrap()
-                .ends_with(".sierra")
+                .ends_with(".contract_class")
             {
                 sierra_files_path.push(entry.path());
             }
