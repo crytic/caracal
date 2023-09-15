@@ -32,7 +32,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     let mut sierra_files_path = vec![];
 
     if let Ok(entries) = fs::read_dir(opts.target.as_path().join(Path::new("target/dev"))) {
-        let accepted_formats = vec![
+        let accepted_formats = [
             // For scarb <= 0.7.0
             ".sierra",
             ".contract_class",
