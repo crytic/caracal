@@ -75,7 +75,7 @@ impl CallgraphPrinter {
         let calling_fn_name = match f.ty() {
             // In the case of loop functions we use the parent function's name
             Type::Loop => name.rsplit_once('[').unwrap().0,
-            _ => name
+            _ => name,
         };
         let mut tracked_fns: HashSet<String> = HashSet::new();
         self.add_contract_subgraphs(calling_fn_name, tracked_contracts, &mut tracked_fns);
