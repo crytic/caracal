@@ -1,5 +1,6 @@
 use super::printer::{Filter, PrintOpts, Printer, Result};
 use crate::core::compilation_unit::CompilationUnit;
+use crate::core::function::Type;
 use crate::core::{core_unit::CoreUnit, function::Function};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::program::Statement as SierraStatement;
@@ -42,16 +43,19 @@ impl Printer for CallgraphPrinter {
             }
             // Write callgraph to file
             let output = graph.print(&mut PrinterContext::default());
-
+            let file_name = format!("{}.dot", module_name.replace("::", "_"));
             let mut f = std::fs::OpenOptions::new()
                 .write(true)
                 .truncate(true)
                 .create(true)
-                .open(format!("{}.dot", module_name))
+                .open(&file_name)
                 .expect("Error when creating file");
 
             f.write_all(output.as_bytes()).unwrap();
-            let message = format!("Call graph for module {}", &module_name);
+            let message = format!(
+                "Call graph for module {} in file {}",
+                &module_name, &file_name
+            );
             results.push(Result {
                 name: self.name().to_string(),
                 message,
@@ -70,7 +74,12 @@ impl CallgraphPrinter {
         graph: &mut Graph,
     ) {
         // Add a node/module for the current function (if it doesn't exist yet, we add a module subgraph)
-        let calling_fn_name = &f.name();
+        let name = &f.name();
+        let calling_fn_name = match f.ty() {
+            // In the case of loop functions we use the parent function's name
+            Type::Loop => name.rsplit_once('[').unwrap().0,
+            _ => name,
+        };
         let mut tracked_fns: HashSet<String> = HashSet::new();
         self.add_contract_subgraphs(calling_fn_name, tracked_contracts, &mut tracked_fns);
 
@@ -153,10 +162,11 @@ impl CallgraphPrinter {
         // Update contract subgraph with new function, or generate subgraph if it doesn't exist yet
         match contract_subgraph {
             Some(subgraph) => {
-                let mut new_subgraph = subgraph.clone();
+                let stmt = Stmt::from(function_node);
                 // Avoid adding a visited function to the subgraph again
-                if !tracked_fns.contains(func_name) {
-                    new_subgraph.stmts.push(Stmt::from(function_node));
+                if !tracked_fns.contains(func_name) && !subgraph.stmts.contains(&stmt) {
+                    let mut new_subgraph = subgraph.clone();
+                    new_subgraph.stmts.push(stmt);
                     tracked_fns.insert(func_name.to_string());
                     tracked_contracts.insert(module_name.clone(), new_subgraph);
                 }
