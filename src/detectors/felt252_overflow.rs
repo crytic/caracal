@@ -15,11 +15,11 @@ pub struct Felt252Overflow {}
 
 impl Detector for Felt252Overflow {
     fn name(&self) -> &str {
-        "felt252-overflow"
+        "felt252-unsafe-arithmetic"
     }
 
     fn description(&self) -> &str {
-        "Detect felt252 arithmetic overflow with user-controlled params"
+        "Detect felt252 arithmetic overflow/underflow with user-controlled params"
     }
 
     fn confidence(&self) -> Confidence {
@@ -27,7 +27,7 @@ impl Detector for Felt252Overflow {
     }
 
     fn impact(&self) -> Impact {
-        Impact::High
+        Impact::Medium
     }
 
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
@@ -116,7 +116,7 @@ impl Felt252Overflow {
         // Not tainted by any parameter, but still uses felt252 type
         if tainted_by.is_empty() {
             let msg = format!(
-                "The function {} uses the felt252 operation {}, which is not overflow safe",
+                "The function {} uses the felt252 operation {}, which is not overflow/underflow safe",
                 &name, libfunc
             );
             results.push(Result {
@@ -127,7 +127,7 @@ impl Felt252Overflow {
             });
         } else {
             let msg = format!(
-                    "The function {} uses the felt252 operation {} with the user-controlled parameters: {}, which is not overflow safe",
+                    "The function {} uses the felt252 operation {} with the user-controlled parameters: {}, which is not overflow/underflow safe",
                     &name,
                     libfunc,
                     taints
