@@ -43,16 +43,19 @@ impl Printer for CallgraphPrinter {
             }
             // Write callgraph to file
             let output = graph.print(&mut PrinterContext::default());
-            let file_name = module_name.replace("::", "_");
+            let file_name = format!("{}.dot", module_name.replace("::", "_"));
             let mut f = std::fs::OpenOptions::new()
                 .write(true)
                 .truncate(true)
                 .create(true)
-                .open(format!("{}.dot", file_name))
+                .open(&file_name)
                 .expect("Error when creating file");
 
             f.write_all(output.as_bytes()).unwrap();
-            let message = format!("Call graph for module {}", &module_name);
+            let message = format!(
+                "Call graph for module {} in file {}",
+                &module_name, &file_name
+            );
             results.push(Result {
                 name: self.name().to_string(),
                 message,
