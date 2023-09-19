@@ -32,15 +32,21 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     let mut sierra_files_path = vec![];
 
     if let Ok(entries) = fs::read_dir(opts.target.as_path().join(Path::new("target/dev"))) {
+        let accepted_formats = [
+            // For scarb <= 0.7.0
+            ".sierra",
+            ".contract_class",
+        ];
         for entry in entries.flatten() {
-            if entry
-                .path()
-                .file_stem()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .ends_with(".sierra")
-            {
+            if accepted_formats.iter().any(|f| {
+                entry
+                    .path()
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .ends_with(*f)
+            }) {
                 sierra_files_path.push(entry.path());
             }
         }

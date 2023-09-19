@@ -6,6 +6,12 @@ input_file: tests/detectors/unused_return.cairo
 [
     Result {
         impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::f_5 uses the felt252 operation felt252_mul([14], [15]) -> ([16]), which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
         name: "unused-return",
         confidence: Medium,
         message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_1>([7], [8], [9], [10]) -> ([4], [5], [6]) in unused_return::unused_return::UnusedReturn::unused_return_1",

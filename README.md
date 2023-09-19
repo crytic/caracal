@@ -15,7 +15,7 @@ Caracal is a static analyzer tool over the SIERRA representation for Starknet sm
 Precompiled binaries are available on our [releases page](https://github.com/crytic/caracal/releases). If you are using Cairo compiler 1.x.x uses the binary v0.1.x otherwise if you are using the Cairo compiler 2.x.x uses v0.2.x.
 
 ### Building from source
-You need the Rust compiler and Cargo.  
+You need the Rust compiler and Cargo.
 Building from git:
 ```bash
 cargo install --git https://github.com/crytic/caracal --profile release --force
@@ -37,7 +37,7 @@ List printers:
 caracal printers
 ```
 ### Standalone
-To use with a standalone cairo file you need to pass the path to the [corelib](https://github.com/starkware-libs/cairo/tree/main/corelib) library either with the `--corelib` cli option or by setting the `CORELIB_PATH` environment variable.  
+To use with a standalone cairo file you need to pass the path to the [corelib](https://github.com/starkware-libs/cairo/tree/main/corelib) library either with the `--corelib` cli option or by setting the `CORELIB_PATH` environment variable.
 Run detectors:
 ```bash
 caracal detect path/file/to/analyze --corelib path/to/corelib/src
@@ -55,7 +55,7 @@ sierra = true
 [cairo]
 sierra-replace-ids = true
 ```
-Then pass the path to the directory where Scarb.toml resides.  
+Then pass the path to the directory where Scarb.toml resides.
 Run detectors:
 ```bash
 caracal detect path/to/dir
@@ -70,20 +70,21 @@ Num | Detector | What it Detects | Impact | Confidence | Cairo
 --- | --- | --- | --- | --- | ---
 1 | `controlled-library-call` | Library calls with a user controlled class hash | High | Medium | 1 & 2
 2 | `unchecked-l1-handler-from` | Detect L1 handlers without from address check | High | Medium | 1 & 2
-3 | `reentrancy` | Detect when a storage variable is read before an external call and written after | Medium | Medium | 1 & 2
-4 | `read-only-reentrancy` | Detect when a view function read a storage variable written after an external call | Medium | Medium | 1 & 2
-5 | `unused-events` | Events defined but not emitted | Medium | Medium | 1 & 2
-6 | `unused-return` | Unused return values | Medium | Medium | 1 & 2
-7 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium | 1
-8 | `unused-arguments` | Unused arguments | Low | Medium | 1 & 2
-9 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
-10 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
-11 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
+3 | `felt252-unsafe-arithmetic` | Detect user controlled operations with felt252 type, which is not overflow/underflow safe | Medium | Medium | 1 & 2
+4 | `reentrancy` | Detect when a storage variable is read before an external call and written after | Medium | Medium | 1 & 2
+5 | `read-only-reentrancy` | Detect when a view function read a storage variable written after an external call | Medium | Medium | 1 & 2
+6 | `unused-events` | Events defined but not emitted | Medium | Medium | 1 & 2
+7 | `unused-return` | Unused return values | Medium | Medium | 1 & 2
+8 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium | 1
+9 | `unused-arguments` | Unused arguments | Low | Medium | 1 & 2
+10 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
+11 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
+12 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
 
-The Cairo column represent the compiler version for which the detector is valid.
+The Cairo column represent the compiler version(s) for which the detector is valid.
 
 ## Printers
-- `cfg`: Export the CFG of each function in a .dot file
+- `cfg`: Export the CFG of each function to a .dot file
 - `callgraph`: Export function call graph to a .dot file
 
 ## How to contribute
