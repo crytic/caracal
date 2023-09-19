@@ -27,7 +27,7 @@ impl Detector for Felt252Overflow {
     }
 
     fn impact(&self) -> Impact {
-        Impact::High
+        Impact::Medium
     }
 
     fn run(&self, core: &CoreUnit) -> Vec<Result> {
