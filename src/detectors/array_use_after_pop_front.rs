@@ -63,20 +63,35 @@ impl Detector for ArrayUseAfterPopFront {
                     })
                     .collect();
 
-                let bad_array_used = pop_fronts.iter().any(|(index, bad_array)| {
-                    self.is_array_used_after_pop_front(
-                        compilation_unit,
-                        function,
-                        bad_array,
-                        *index,
-                    )
-                });
+                let bad_array_used: Vec<&(usize, WrapperVariable)> = pop_fronts
+                    .iter()
+                    .filter(|(index, bad_array)| {
+                        self.is_array_used_after_pop_front(
+                            compilation_unit,
+                            function,
+                            bad_array,
+                            *index,
+                        )
+                    })
+                    .collect();
 
-                if bad_array_used {
-                    let message = format!(
-                        "An array is used after removing elements from it in the function {}",
-                        &function.name()
-                    );
+                if !bad_array_used.is_empty() {
+                    let array_ids = bad_array_used
+                        .iter()
+                        .map(|f| f.1.variable().id)
+                        .collect::<Vec<u64>>();
+                    let message = match array_ids.len() {
+                        1 => format!(
+                            "The array {:?} is used after removing elements from it in the function {}",
+                            array_ids,
+                            &function.name()
+                        ),
+                        _ => format!(
+                            "The arrays {:?} are used after removing elements from them in the function {}",
+                            array_ids,
+                            &function.name()
+                        )
+                    };
                     results.push(Result {
                         name: self.name().to_string(),
                         impact: self.impact(),
@@ -109,25 +124,11 @@ impl ArrayUseAfterPopFront {
                 compilation_unit,
                 function,
                 bad_array,
-                &mut function.private_functions_calls(),
-            )
-            || self.check_calls(
-                compilation_unit,
-                function,
-                bad_array,
-                &mut function.library_functions_calls(),
-            )
-            || self.check_calls(
-                compilation_unit,
-                function,
-                bad_array,
-                &mut function.external_functions_calls(),
-            )
-            || self.check_calls(
-                compilation_unit,
-                function,
-                bad_array,
-                &mut function.events_emitted(),
+                &mut function
+                    .private_functions_calls()
+                    .chain(function.library_functions_calls())
+                    .chain(function.external_functions_calls())
+                    .chain(function.events_emitted()),
             );
 
         // Check the caller of the current function
@@ -285,25 +286,11 @@ impl ArrayUseAfterPopFront {
                                 compilation_unit,
                                 function,
                                 bad_array,
-                                &mut maybe_caller.private_functions_calls(),
-                            )
-                            || self.check_calls(
-                                compilation_unit,
-                                function,
-                                bad_array,
-                                &mut maybe_caller.library_functions_calls(),
-                            )
-                            || self.check_calls(
-                                compilation_unit,
-                                function,
-                                bad_array,
-                                &mut maybe_caller.external_functions_calls(),
-                            )
-                            || self.check_calls(
-                                compilation_unit,
-                                function,
-                                bad_array,
-                                &mut maybe_caller.events_emitted(),
+                                &mut maybe_caller
+                                    .private_functions_calls()
+                                    .chain(maybe_caller.library_functions_calls())
+                                    .chain(maybe_caller.external_functions_calls())
+                                    .chain(maybe_caller.events_emitted()),
                             )
                     })
             })

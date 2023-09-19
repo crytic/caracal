@@ -95,6 +95,21 @@ mod ArrayUseAfterPopFront {
     }
 
     #[external(v0)]
+    fn bad_multiple_arrays(ref self: ContractState) {
+        let mut arr = ArrayTrait::<u128>::new();
+        arr.append(1);
+
+        let b = arr.pop_front();
+        self.emit(ArrayEvent{ arr });
+
+        let mut arr1 = ArrayTrait::<u128>::new();
+        arr1.append(1);
+
+        let b1 = arr1.pop_front();
+        self.emit(ArrayEvent{ arr: arr1 });
+    }
+
+    #[external(v0)]
     fn good(self: @ContractState) {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
