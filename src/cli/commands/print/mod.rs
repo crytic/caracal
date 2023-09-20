@@ -14,6 +14,10 @@ pub struct PrintArgs {
     #[arg(long)]
     corelib: Option<PathBuf>,
 
+    /// Path to the contract to compile when using a cairo project with multiple contracts
+    #[arg(long)]
+    contract_path: Option<String>,
+
     /// Which functions to run the printer (all, user-functions)   
     #[arg(short, long, default_value_t = Filter::UserFunctions)]
     filter: Filter,
@@ -28,6 +32,7 @@ impl From<&PrintArgs> for CoreOpts {
         CoreOpts {
             target: args.target.clone(),
             corelib: args.corelib.clone(),
+            contract_path: args.contract_path.clone(),
         }
     }
 }

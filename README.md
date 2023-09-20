@@ -46,6 +46,19 @@ Run printers:
 ```bash
 caracal print path/file/to/analyze --printer printer_to_use --corelib path/to/corelib/src
 ```
+### Cairo project
+If you have a cairo project with multiple files and contracts you may need to specify which contract with `--contract-path`. The local cairo compiler binary is used if available otherwise a bundled compiler is used. In the latter case you also need to specify the corelib as explained above for the standalone case. The path is the directory where `cairo_project.toml` resides.  
+Run detectors:
+```bash
+caracal detect path/to/dir
+```
+```bash
+caracal detect path/to/dir --contract-path token::myerc20::...
+```
+Run printers:
+```bash
+caracal print path/to/dir --printer printer_to_use
+```
 ### Scarb
 If you have a project that uses Scarb you need to add the following in Scarb.toml:
 ```bash
