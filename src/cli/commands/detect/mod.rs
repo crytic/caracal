@@ -18,9 +18,9 @@ pub struct DetectArgs {
     #[arg(long)]
     corelib: Option<PathBuf>,
 
-    /// Path to the contract to compile when using a cairo project with multiple contracts
-    #[arg(long)]
-    contract_path: Option<String>,
+    /// Path to the contracts to compile when using a cairo project with multiple contracts
+    #[arg(long, num_args(0..))]
+    contract_path: Option<Vec<String>>,
 
     /// Detectors to run
     #[arg(long, num_args(0..), conflicts_with_all(["exclude", "exclude_informational", "exclude_low", "exclude_medium", "exclude_high"]))]

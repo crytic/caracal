@@ -14,9 +14,9 @@ pub struct PrintArgs {
     #[arg(long)]
     corelib: Option<PathBuf>,
 
-    /// Path to the contract to compile when using a cairo project with multiple contracts
-    #[arg(long)]
-    contract_path: Option<String>,
+    /// Path to the contracts to compile when using a cairo project with multiple contracts
+    #[arg(long, num_args(0..))]
+    contract_path: Option<Vec<String>>,
 
     /// Which functions to run the printer (all, user-functions)   
     #[arg(short, long, default_value_t = Filter::UserFunctions)]

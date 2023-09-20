@@ -1,6 +1,7 @@
 use anyhow::{anyhow, bail, Context, Result};
 use std::env;
 use std::process;
+use std::process::Output;
 use std::sync::Arc;
 
 use super::ProgramCompiled;
@@ -97,41 +98,56 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
 }
 
 fn local_compiler(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
-    let output = if let Some(contract_path) = opts.contract_path {
-        process::Command::new("starknet-compile")
-            .arg(opts.target)
-            .arg("--contract-path")
-            .arg(contract_path)
-            .arg("--replace-ids")
-            .output()?
+    let mut compiler_calls: Vec<Output> = vec![];
+    if let Some(contract_paths) = opts.contract_path {
+        contract_paths.iter().for_each(|c| {
+            compiler_calls.push(
+                process::Command::new("starknet-compile")
+                    .arg(opts.target.clone())
+                    .arg("--contract-path")
+                    .arg(c)
+                    .arg("--replace-ids")
+                    .output()
+                    .unwrap(),
+            )
+        });
     } else {
-        process::Command::new("starknet-compile")
-            .arg(opts.target)
-            .arg("--replace-ids")
-            .output()?
+        compiler_calls.push(
+            process::Command::new("starknet-compile")
+                .arg(opts.target)
+                .arg("--replace-ids")
+                .output()
+                .unwrap(),
+        );
     };
 
-    if !output.status.success() {
-        bail!(anyhow!(
-            "starknet-compile failed to compile.\n Status {}\n {}",
-            output.status,
-            String::from_utf8(output.stderr)?
-        ));
+    let mut programs_compiled: Vec<ProgramCompiled> = vec![];
+
+    for compiler_call in compiler_calls {
+        if !compiler_call.status.success() {
+            bail!(anyhow!(
+                "starknet-compile failed to compile.\n Status {}\n {}",
+                compiler_call.status,
+                String::from_utf8(compiler_call.stderr)?
+            ));
+        }
+
+        let contract_class: ContractClass =
+            serde_json::from_str(&String::from_utf8(compiler_call.stdout)?).unwrap();
+
+        // We don't have to check the existence because we ran the compiler with --replace-ids
+        let debug_info = contract_class.sierra_program_debug_info.unwrap();
+
+        let sierra = sierra_from_felt252s(&contract_class.sierra_program)
+            .unwrap()
+            .2;
+        let sierra = SierraProgramDebugReplacer { debug_info }.apply(&sierra);
+
+        programs_compiled.push(ProgramCompiled {
+            sierra,
+            abi: contract_class.abi.unwrap(),
+        });
     }
 
-    let contract_class: ContractClass =
-        serde_json::from_str(&String::from_utf8(output.stdout)?).unwrap();
-
-    // We don't have to check the existence because we ran the compiler with --replace-ids
-    let debug_info = contract_class.sierra_program_debug_info.unwrap();
-
-    let sierra = sierra_from_felt252s(&contract_class.sierra_program)
-        .unwrap()
-        .2;
-    let sierra = SierraProgramDebugReplacer { debug_info }.apply(&sierra);
-
-    Ok(vec![ProgramCompiled {
-        sierra,
-        abi: contract_class.abi.unwrap(),
-    }])
+    Ok(programs_compiled)
 }
