@@ -10,7 +10,8 @@ use cairo_lang_sierra::program::{
 };
 use cairo_lang_sierra::program_registry::ProgramRegistry;
 use cairo_lang_starknet::abi::{
-    Contract, Item::Function as AbiFunction, Item::L1Handler as AbiL1Handler,
+    Contract, Item::Function as AbiFunction, Item::Interface as AbiInterface,
+    Item::L1Handler as AbiL1Handler,
 };
 
 pub struct CompilationUnit {
@@ -149,6 +150,11 @@ impl CompilationUnit {
         // Set the function type
         for f in self.functions.iter_mut() {
             let full_name = f.name();
+            // This is needed to handle when a function is implemented inside an impl block
+            // it removes the impl name added
+            let mut full_name2: Vec<&str> = full_name.split("::").collect();
+            full_name2.remove(full_name2.len() - 2);
+            let full_name2 = full_name2.join("::");
 
             // append_keys_and_data is a function implemented by the starknet::Event trait
             if full_name.starts_with("core::") || full_name.ends_with("::append_keys_and_data") {
@@ -163,7 +169,9 @@ impl CompilationUnit {
             } else if constructors.contains(&full_name) {
                 // Constructor
                 f.set_ty(Type::Constructor);
-            } else if external_functions.contains(&full_name) {
+            } else if external_functions.contains(&full_name)
+                || external_functions.contains(&full_name2)
+            {
                 // External function, we need to check in the abi if it's view or external
                 let function_name = full_name.rsplit_once("::").unwrap().1;
 
@@ -187,6 +195,34 @@ impl CompilationUnit {
                             if l1handler.name == function_name {
                                 f.set_ty(Type::L1Handler);
                                 break;
+                            }
+                        }
+                        AbiInterface(interface) => {
+                            for item in interface.items.iter() {
+                                match item {
+                                    AbiFunction(function) => {
+                                        // If multiple interfaces have the same function name then it could be wrong
+                                        if function.name == function_name {
+                                            match function.state_mutability {
+                                                cairo_lang_starknet::abi::StateMutability::External => {
+                                                    f.set_ty(Type::External);
+                                                    break;
+                                                }
+                                                cairo_lang_starknet::abi::StateMutability::View => {
+                                                    f.set_ty(Type::View);
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    AbiL1Handler(l1handler) => {
+                                        if l1handler.name == function_name {
+                                            f.set_ty(Type::L1Handler);
+                                            break;
+                                        }
+                                    }
+                                    _ => (),
+                                }
                             }
                         }
                         _ => (),
