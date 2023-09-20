@@ -74,7 +74,7 @@ pub struct Function {
     storage_vars_written: Vec<SierraStatement>,
     /// Core functions called
     core_functions_calls: Vec<SierraStatement>,
-    /// Private functions called
+    /// Private functions called + calls to self declared External/View functions
     private_functions_calls: Vec<SierraStatement>,
     /// Events emitted (NOTE it doesn't have events emitted using the syscall directly)
     events_emitted: Vec<SierraStatement>,
@@ -235,7 +235,9 @@ impl Function {
                                 }
                                 Type::Event => self.events_emitted.push(s.clone()),
                                 Type::Core => self.core_functions_calls.push(s.clone()),
-                                Type::Private => self.private_functions_calls.push(s.clone()),
+                                Type::Private | Type::External | Type::View => {
+                                    self.private_functions_calls.push(s.clone())
+                                }
                                 Type::AbiCallContract => {
                                     self.external_functions_calls.push(s.clone())
                                 }

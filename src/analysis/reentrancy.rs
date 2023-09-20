@@ -143,7 +143,8 @@ impl ReentrancyAnalysis {
                                     Type::Event => {
                                         inner_state.events.insert(basic_block.clone());
                                     }
-                                    Type::Private | Type::Loop => {
+                                    // External and View are needed because it's possible to call self declared external functions within a private function
+                                    Type::Private | Type::Loop | Type::External | Type::View => {
                                         if let GenStatement::Invocation(invoc) =
                                             instruction.get_statement()
                                         {
