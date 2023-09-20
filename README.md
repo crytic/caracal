@@ -37,8 +37,11 @@ List printers:
 caracal printers
 ```
 ### Standalone
-To use with a standalone cairo file you need to pass the path to the [corelib](https://github.com/starkware-libs/cairo/tree/main/corelib) library either with the `--corelib` cli option or by setting the `CORELIB_PATH` environment variable.
+To use with a standalone cairo file and you have a local cairo compiler binary it's enough to point it to the file. Otherwise otherwise a bundled compiler is used and you need to pass the path to the [corelib](https://github.com/starkware-libs/cairo/tree/main/corelib) library either with the `--corelib` cli option or by setting the `CORELIB_PATH` environment variable.  
 Run detectors:
+```bash
+caracal detect path/file/to/analyze
+```
 ```bash
 caracal detect path/file/to/analyze --corelib path/to/corelib/src
 ```
