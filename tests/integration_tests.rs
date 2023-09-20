@@ -11,6 +11,7 @@ fn test_detectors() {
             corelib: Some(PathBuf::from(
                 env::var("CARGO_MANIFEST_DIR").unwrap() + "/corelib/src",
             )),
+            contract_path: None,
         };
         let core = CoreUnit::new(opts).unwrap();
         let mut results = get_detectors()
