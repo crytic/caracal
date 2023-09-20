@@ -10,7 +10,7 @@ use crate::core::compilation_unit::CompilationUnit;
 pub struct CoreOpts {
     pub target: PathBuf,
     pub corelib: Option<PathBuf>,
-    pub contract_path: Option<String>,
+    pub contract_path: Option<Vec<String>>,
 }
 
 pub struct CoreUnit {
