@@ -26,7 +26,7 @@ impl Detector for ReadOnlyReentrancy {
         Impact::Medium
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
         let mut results: HashSet<Result> = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
@@ -104,6 +104,6 @@ impl Detector for ReadOnlyReentrancy {
             }
         }
 
-        Vec::from_iter(results)
+        results
     }
 }

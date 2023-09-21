@@ -29,8 +29,8 @@ impl Detector for ArrayUseAfterPopFront {
         Impact::Low
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results: HashSet<Result> = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units.iter() {
@@ -92,7 +92,7 @@ impl Detector for ArrayUseAfterPopFront {
                             &function.name()
                         )
                     };
-                    results.push(Result {
+                    results.insert(Result {
                         name: self.name().to_string(),
                         impact: self.impact(),
                         confidence: self.confidence(),
