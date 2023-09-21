@@ -28,8 +28,8 @@ impl Detector for UnusedEvents {
         Impact::Medium
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results: HashSet<Result> = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units {
@@ -66,7 +66,7 @@ impl Detector for UnusedEvents {
                 .iter()
                 .map(|event_function| event_function.rsplit_once("::").unwrap())
                 .for_each(|(event_declaration, event_name)| {
-                    results.push(Result {
+                    results.insert(Result {
                         name: self.name().to_string(),
                         impact: self.impact(),
                         confidence: self.confidence(),
@@ -74,7 +74,7 @@ impl Detector for UnusedEvents {
                             "Event {} defined in {} is never emitted",
                             event_name, event_declaration
                         ),
-                    })
+                    });
                 });
         }
         results
