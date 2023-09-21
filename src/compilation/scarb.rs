@@ -4,9 +4,9 @@ use std::path::Path;
 use std::process;
 
 use crate::compilation::utils::felt252_serde::sierra_from_felt252s;
+use crate::compilation::utils::replacer::SierraProgramDebugReplacer;
 use crate::compilation::ProgramCompiled;
 use crate::core::core_unit::CoreOpts;
-use cairo_lang_sierra::debug_info::DebugInfo;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet::contract_class::ContractClass;
 
@@ -32,15 +32,21 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     let mut sierra_files_path = vec![];
 
     if let Ok(entries) = fs::read_dir(opts.target.as_path().join(Path::new("target/dev"))) {
+        let accepted_formats = [
+            // For scarb <= 0.7.0
+            ".sierra",
+            ".contract_class",
+        ];
         for entry in entries.flatten() {
-            if entry
-                .path()
-                .file_stem()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .ends_with(".sierra")
-            {
+            if accepted_formats.iter().any(|f| {
+                entry
+                    .path()
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .ends_with(*f)
+            }) {
                 sierra_files_path.push(entry.path());
             }
         }
@@ -75,7 +81,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
         let program = sierra_from_felt252s(&contract_class.sierra_program)
             .unwrap()
             .2;
-        let program = ScarbDebugReplacer { debug_info }.apply(&program);
+        let program = SierraProgramDebugReplacer { debug_info }.apply(&program);
         programs_compiled.push(ProgramCompiled {
             sierra: program,
             abi: contract_class.abi.unwrap(),
@@ -83,55 +89,4 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     }
 
     Ok(programs_compiled)
-}
-
-struct ScarbDebugReplacer {
-    debug_info: DebugInfo,
-}
-
-impl SierraIdReplacer for ScarbDebugReplacer {
-    fn replace_libfunc_id(
-        &self,
-        id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
-    ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-        let func_name = self
-            .debug_info
-            .libfunc_names
-            .get(id)
-            .expect("No libfunc in debug info");
-        cairo_lang_sierra::ids::ConcreteLibfuncId {
-            id: id.id,
-            debug_name: Some(func_name.clone()),
-        }
-    }
-
-    fn replace_type_id(
-        &self,
-        id: &cairo_lang_sierra::ids::ConcreteTypeId,
-    ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-        let type_name = self
-            .debug_info
-            .type_names
-            .get(id)
-            .expect("No typeid in debug info");
-        cairo_lang_sierra::ids::ConcreteTypeId {
-            id: id.id,
-            debug_name: Some(type_name.clone()),
-        }
-    }
-
-    fn replace_function_id(
-        &self,
-        sierra_id: &cairo_lang_sierra::ids::FunctionId,
-    ) -> cairo_lang_sierra::ids::FunctionId {
-        let function_name = self
-            .debug_info
-            .user_func_names
-            .get(sierra_id)
-            .expect("No funcid in debug info");
-        cairo_lang_sierra::ids::FunctionId {
-            id: sierra_id.id,
-            debug_name: Some(function_name.clone()),
-        }
-    }
 }

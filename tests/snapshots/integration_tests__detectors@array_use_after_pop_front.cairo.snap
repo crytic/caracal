@@ -1,0 +1,43 @@
+---
+source: tests/integration_tests.rs
+expression: results
+input_file: tests/detectors/array_use_after_pop_front.cairo
+---
+[
+    Result {
+        impact: Low,
+        name: "array-use-after-pop-front",
+        confidence: Medium,
+        message: "The array [2] is used after removing elements from it in the function array_use_after_pop_front::array_use_after_pop_front::ArrayUseAfterPopFront::bad_return",
+    },
+    Result {
+        impact: Low,
+        name: "array-use-after-pop-front",
+        confidence: Medium,
+        message: "The array [2] is used after removing elements from it in the function bad_loop[expr10]",
+    },
+    Result {
+        impact: Low,
+        name: "array-use-after-pop-front",
+        confidence: Medium,
+        message: "The array [5] is used after removing elements from it in the function array_use_after_pop_front::array_use_after_pop_front::ArrayUseAfterPopFront::bad",
+    },
+    Result {
+        impact: Low,
+        name: "array-use-after-pop-front",
+        confidence: Medium,
+        message: "The array [5] is used after removing elements from it in the function array_use_after_pop_front::array_use_after_pop_front::ArrayUseAfterPopFront::bad_external_call",
+    },
+    Result {
+        impact: Low,
+        name: "array-use-after-pop-front",
+        confidence: Medium,
+        message: "The array [5] is used after removing elements from it in the function array_use_after_pop_front::array_use_after_pop_front::ArrayUseAfterPopFront::bad_library_call",
+    },
+    Result {
+        impact: Low,
+        name: "array-use-after-pop-front",
+        confidence: Medium,
+        message: "The array [5] is used after removing elements from it in the function array_use_after_pop_front::array_use_after_pop_front::ArrayUseAfterPopFront::bad_one_branch",
+    },
+]

@@ -1,13 +1,13 @@
 use crate::core::core_unit::CoreUnit;
 
-use std::fmt;
+use std::{collections::HashSet, fmt};
 
 pub trait Detector {
     fn name(&self) -> &str;
     fn description(&self) -> &str;
     fn impact(&self) -> Impact;
     fn confidence(&self) -> Confidence;
-    fn run(&self, core: &CoreUnit) -> Vec<Result>;
+    fn run(&self, core: &CoreUnit) -> HashSet<Result>;
 }
 
 impl fmt::Display for dyn Detector {

@@ -229,7 +229,9 @@ impl Function {
                                 }
                                 Type::Event => self.events_emitted.push(s.clone()),
                                 Type::Core => self.core_functions_calls.push(s.clone()),
-                                Type::Private => self.private_functions_calls.push(s.clone()),
+                                Type::Private | Type::External | Type::View => {
+                                    self.private_functions_calls.push(s.clone())
+                                }
                                 Type::AbiCallContract => {
                                     self.external_functions_calls.push(s.clone())
                                 }

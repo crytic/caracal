@@ -27,8 +27,8 @@ impl Detector for DeadCode {
         Impact::Low
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units {
@@ -70,7 +70,7 @@ impl Detector for DeadCode {
                 .iter()
                 .map(|private_function| private_function.rsplit_once("::").unwrap())
                 .for_each(|(function_declaration, function_name)| {
-                    results.push(Result {
+                    results.insert(Result {
                         name: self.name().to_string(),
                         impact: self.impact(),
                         confidence: self.confidence(),
@@ -78,7 +78,7 @@ impl Detector for DeadCode {
                             "Function {} defined in {} is never used",
                             function_name, function_declaration
                         ),
-                    })
+                    });
                 });
         }
         results

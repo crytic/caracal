@@ -22,8 +22,8 @@ impl Detector for UnenforcedView {
     fn impact(&self) -> Impact {
         Impact::Medium
     }
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units {
@@ -37,7 +37,7 @@ impl Detector for UnenforcedView {
                 let func_name = func.name();
                 let (declaration, name) = func_name.rsplit_once("::").unwrap();
                 if func.storage_vars_written().count() > 0 || func.events_emitted().count() > 0 {
-                    results.push(Result {
+                    results.insert(Result {
                         name: self.name().to_string(),
                         impact: self.impact(),
                         confidence: self.confidence(),
@@ -67,7 +67,7 @@ impl UnenforcedView {
         compilation_unit: &CompilationUnit,
         declaration: &str,
         name: &str,
-        results: &mut Vec<Result>,
+        results: &mut HashSet<Result>,
         subcalls: Vec<&SierraStatement>,
         tracked_fns: &mut HashSet<String>,
     ) {
@@ -102,7 +102,7 @@ impl UnenforcedView {
                     if called_fn.storage_vars_written().count() > 0
                         || called_fn.events_emitted().count() > 0
                     {
-                        results.push(Result {
+                        results.insert(Result {
                             name: self.name().to_string(),
                             impact: self.impact(),
                             confidence: self.confidence(),

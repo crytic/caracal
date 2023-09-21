@@ -2,8 +2,13 @@ use anyhow::{anyhow, bail, Context, Result};
 use std::collections::HashMap;
 use std::env;
 use std::process;
+use std::process::Output;
 use std::sync::Arc;
 
+use super::ProgramCompiled;
+use crate::compilation::utils::felt252_serde::sierra_from_felt252s;
+use crate::compilation::utils::replacer::SierraProgramDebugReplacer;
+use crate::core::core_unit::CoreOpts;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, ProjectConfig, ProjectConfigContent};
 use cairo_lang_compiler::CompilerConfig;
@@ -15,11 +20,6 @@ use cairo_lang_starknet::contract::{find_contracts, get_abi};
 use cairo_lang_starknet::contract_class::ContractClass;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 
-use super::ProgramCompiled;
-use crate::compilation::utils::felt252_serde::sierra_from_felt252s;
-use crate::compilation::utils::replacer::SierraProgramDebugReplacer;
-use crate::core::core_unit::CoreOpts;
-
 pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     let output = process::Command::new("starknet-compile")
         .arg("--version")
@@ -27,15 +27,16 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
 
     if let Ok(result) = output {
         if result.status.success() {
-            let version = String::from_utf8(result.stdout)?;
-            println!("Found local cairo installation {}", version);
+            println!(
+                "Found local cairo installation {}",
+                String::from_utf8(result.stdout)?
+            );
 
             return local_compiler(opts);
         }
     }
 
-    // NOTE: compiler_version module is not public so we need to update it as we update the Cairo version we use
-    println!("Compiling with starknet-compile 1.1.1");
+    println!("Local cairo installation not found. Compiling with starknet-compile 1.1.1");
 
     // corelib cli option has priority over the environment variable
     let corelib = match opts.corelib {
@@ -91,32 +92,56 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
 }
 
 fn local_compiler(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
-    let output = process::Command::new("starknet-compile")
-        .arg(opts.target)
-        .arg("--replace-ids")
-        .output()?;
+    let mut compiler_calls: Vec<Output> = vec![];
+    if let Some(contract_paths) = opts.contract_path {
+        contract_paths.iter().for_each(|c| {
+            compiler_calls.push(
+                process::Command::new("starknet-compile")
+                    .arg(opts.target.clone())
+                    .arg("--contract-path")
+                    .arg(c)
+                    .arg("--replace-ids")
+                    .output()
+                    .unwrap(),
+            )
+        });
+    } else {
+        compiler_calls.push(
+            process::Command::new("starknet-compile")
+                .arg(opts.target)
+                .arg("--replace-ids")
+                .output()
+                .unwrap(),
+        );
+    };
 
-    if !output.status.success() {
-        bail!(anyhow!(
-            "starknet-compile failed to compile.\n Status {}\n {}",
-            output.status,
-            String::from_utf8(output.stderr)?
-        ));
+    let mut programs_compiled: Vec<ProgramCompiled> = vec![];
+
+    for compiler_call in compiler_calls {
+        if !compiler_call.status.success() {
+            bail!(anyhow!(
+                "starknet-compile failed to compile.\n Status {}\n {}",
+                compiler_call.status,
+                String::from_utf8(compiler_call.stderr)?
+            ));
+        }
+
+        let contract_class: ContractClass =
+            serde_json::from_str(&String::from_utf8(compiler_call.stdout)?).unwrap();
+
+        // We don't have to check the existence because we ran the compiler with --replace-ids
+        let debug_info = contract_class.sierra_program_debug_info.unwrap();
+
+        let sierra = sierra_from_felt252s(&contract_class.sierra_program)
+            .unwrap()
+            .2;
+        let sierra = SierraProgramDebugReplacer { debug_info }.apply(&sierra);
+
+        programs_compiled.push(ProgramCompiled {
+            sierra,
+            abi: contract_class.abi.unwrap(),
+        });
     }
 
-    let contract_class: ContractClass =
-        serde_json::from_str(&String::from_utf8(output.stdout)?).unwrap();
-
-    // We don't have to check the existence because we ran the compiler with --replace-ids
-    let debug_info = contract_class.sierra_program_debug_info.unwrap();
-
-    let sierra = sierra_from_felt252s(&contract_class.sierra_program)
-        .unwrap()
-        .2;
-    let sierra = SierraProgramDebugReplacer { debug_info }.apply(&sierra);
-
-    Ok(vec![ProgramCompiled {
-        sierra,
-        abi: contract_class.abi.unwrap(),
-    }])
+    Ok(programs_compiled)
 }

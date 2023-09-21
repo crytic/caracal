@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::core::compilation_unit::CompilationUnit;
 use crate::core::core_unit::CoreUnit;
@@ -28,8 +30,8 @@ impl Detector for ControlledLibraryCall {
         Impact::High
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units {
@@ -92,7 +94,7 @@ impl Detector for ControlledLibraryCall {
 impl ControlledLibraryCall {
     fn check_user_controlled(
         &self,
-        results: &mut Vec<Result>,
+        results: &mut HashSet<Result>,
         formal_params: &[ParamSignature],
         actual_params: Vec<VarId>,
         compilation_unit: &CompilationUnit,
@@ -108,7 +110,7 @@ impl ControlledLibraryCall {
                 "Library call to user controlled class hash in {}\n {}",
                 function_name, statement
             );
-            results.push(Result {
+            results.insert(Result {
                 name: self.name().to_string(),
                 impact: self.impact(),
                 confidence: self.confidence(),

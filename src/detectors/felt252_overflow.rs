@@ -30,8 +30,8 @@ impl Detector for Felt252Overflow {
         Impact::Medium
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results = HashSet::new();
 
         let compilation_units = core.get_compilation_units();
         for compilation_unit in compilation_units {
@@ -93,7 +93,7 @@ impl Detector for Felt252Overflow {
 impl Felt252Overflow {
     fn check_felt252_tainted(
         &self,
-        results: &mut Vec<Result>,
+        results: &mut HashSet<Result>,
         compilation_unit: &CompilationUnit,
         libfunc: &SierraStatement,
         args: &[VarId],
@@ -119,7 +119,7 @@ impl Felt252Overflow {
                 "The function {} uses the felt252 operation {}, which is not overflow/underflow safe",
                 &name, libfunc
             );
-            results.push(Result {
+            results.insert(Result {
                 name: self.name().to_string(),
                 impact: self.impact(),
                 confidence: self.confidence(),
@@ -132,7 +132,7 @@ impl Felt252Overflow {
                     libfunc,
                     taints
                 );
-            results.push(Result {
+            results.insert(Result {
                 name: self.name().to_string(),
                 impact: self.impact(),
                 confidence: self.confidence(),
@@ -143,7 +143,7 @@ impl Felt252Overflow {
     #[allow(clippy::too_many_arguments)]
     fn handle_binops(
         &self,
-        results: &mut Vec<Result>,
+        results: &mut HashSet<Result>,
         compilation_unit: &CompilationUnit,
         invoc: &GenInvocation<StatementIdx>,
         statements: &[SierraStatement],

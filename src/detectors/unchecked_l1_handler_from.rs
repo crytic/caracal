@@ -29,8 +29,8 @@ impl Detector for UncheckedL1HandlerFrom {
         Impact::High
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units {
@@ -61,7 +61,7 @@ impl Detector for UncheckedL1HandlerFrom {
                         "The L1 handler function {} does not check the L1 from address",
                         &f.name()
                     );
-                    results.push(Result {
+                    results.insert(Result {
                         name: self.name().to_string(),
                         impact: self.impact(),
                         confidence: self.confidence(),

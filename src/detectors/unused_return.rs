@@ -8,6 +8,7 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement, StatementIdx};
+use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct UnusedReturn;
@@ -29,8 +30,8 @@ impl Detector for UnusedReturn {
         Impact::Medium
     }
 
-    fn run(&self, core: &CoreUnit) -> Vec<Result> {
-        let mut results = Vec::new();
+    fn run(&self, core: &CoreUnit) -> HashSet<Result> {
+        let mut results = HashSet::new();
         let compilation_units = core.get_compilation_units();
 
         for compilation_unit in compilation_units {
@@ -92,7 +93,7 @@ impl Detector for UnusedReturn {
                                     let info = ty_dropped.info();
                                     // If size is 0 it's the Unit type
                                     if info.size != 0 {
-                                        results.push(Result {
+                                        results.insert(Result {
                                             name: self.name().to_string(),
                                             impact: self.impact(),
                                             confidence: self.confidence(),
@@ -173,7 +174,7 @@ impl<'a> UnusedReturn {
     fn iterate_struct_deconstruct(
         &self,
         compilation_unit: &'a CompilationUnit,
-        results: &mut Vec<Result>,
+        results: &mut HashSet<Result>,
         mut libfunc: &'a CoreConcreteLibfunc,
         mut stmt_to_check: &[GenStatement<StatementIdx>],
         stmt: &GenStatement<StatementIdx>,
@@ -209,7 +210,7 @@ impl<'a> UnusedReturn {
             let info = ty_dropped.info();
             // If size is 0 it's the Unit type
             if info.size != 0 {
-                results.push(Result {
+                results.insert(Result {
                     name: self.name().to_string(),
                     impact: self.impact(),
                     confidence: self.confidence(),
