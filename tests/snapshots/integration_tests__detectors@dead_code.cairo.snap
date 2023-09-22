@@ -10,16 +10,4 @@ input_file: tests/detectors/dead_code.cairo
         confidence: Medium,
         message: "The function dead_code::dead_code::DeadCode::add_1 uses the felt252 operation felt252_add([0], [1]) -> ([2]), which is not overflow/underflow safe",
     },
-    Result {
-        impact: Medium,
-        name: "felt252-unsafe-arithmetic",
-        confidence: Medium,
-        message: "The function dead_code::dead_code::DeadCode::add_2 uses the felt252 operation felt252_add([0], [1]) -> ([2]), which is not overflow/underflow safe",
-    },
-    Result {
-        impact: Low,
-        name: "dead-code",
-        confidence: Medium,
-        message: "Function add_2 defined in dead_code::dead_code::DeadCode is never used",
-    },
 ]

@@ -8,18 +8,6 @@ input_file: tests/detectors/unused_arguments.cairo
         impact: Low,
         name: "unused-arguments",
         confidence: Medium,
-        message: "The 2nd argument in unused_arguments::unused_arguments::UnusedArguments::unused_2 is never used",
-    },
-    Result {
-        impact: Low,
-        name: "unused-arguments",
-        confidence: Medium,
         message: "The 3rd argument in unused_arguments::unused_arguments::UnusedArguments::unused_1 is never used",
-    },
-    Result {
-        impact: Low,
-        name: "unused-arguments",
-        confidence: Medium,
-        message: "The 3rd argument in unused_arguments::unused_arguments::UnusedArguments::unused_2 is never used",
     },
 ]

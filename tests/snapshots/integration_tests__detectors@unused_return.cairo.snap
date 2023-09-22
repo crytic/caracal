@@ -12,6 +12,42 @@ input_file: tests/detectors/unused_return.cairo
     },
     Result {
         impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::f_6 uses the felt252 operation felt252_add([16], [17]) -> ([18]) with the user-controlled parameters: [16], which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::f_6 uses the felt252 operation felt252_mul([3], [4]) -> ([16]) with the user-controlled parameters: [3],[4], which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::f_7 uses the felt252 operation felt252_add([19], [20]) -> ([21]) with the user-controlled parameters: [19], which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::f_7 uses the felt252 operation felt252_mul([15], [16]) -> ([18]) with the user-controlled parameters: [15],[16], which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::f_7 uses the felt252 operation felt252_mul([18], [17]) -> ([19]) with the user-controlled parameters: [18],[17], which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function unused_return::unused_return::UnusedReturn::no_report4 uses the felt252 operation felt252_add([6], [18]) -> ([19]) with the user-controlled parameters: [6],[18], which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
         name: "unused-return",
         confidence: Medium,
         message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_1>([7], [8], [9], [10]) -> ([4], [5], [6]) in unused_return::unused_return::UnusedReturn::unused_return_1",
@@ -39,5 +75,17 @@ input_file: tests/detectors/unused_return.cairo
         name: "unused-return",
         confidence: Medium,
         message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_5>([6], [7], [8]) -> ([3], [4], [5]) in unused_return::unused_return::UnusedReturn::unused_return_5",
+    },
+    Result {
+        impact: Medium,
+        name: "unused-return",
+        confidence: Medium,
+        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_6>([10], [11], [12], [13], [14]) -> ([7], [8], [9]) in unused_return::unused_return::UnusedReturn::unused_return_6",
+    },
+    Result {
+        impact: Medium,
+        name: "unused-return",
+        confidence: Medium,
+        message: "Return value unused for the function call function_call<user@unused_return::unused_return::UnusedReturn::f_7>([7], [8], [9], [10]) -> ([4], [5], [6]) in unused_return::unused_return::UnusedReturn::unused_return_7",
     },
 ]
