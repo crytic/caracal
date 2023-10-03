@@ -97,6 +97,7 @@ Num | Detector | What it Detects | Impact | Confidence | Cairo
 11 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
 12 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
 13 | `array-use-after-pop-front` | Detect use of an array after removing element(s) | Low | Medium | 1 & 2
+14 | `dangerous-use-of-transaction-origin` | "Detect usage of the transaction origin account address for the authentication or authorization
 
 The Cairo column represent the compiler version(s) for which the detector is valid.
 

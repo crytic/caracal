@@ -9,6 +9,7 @@ pub mod read_only_reentrancy;
 pub mod reentrancy;
 pub mod reentrancy_benign;
 pub mod reentrancy_events;
+pub mod tx_origin;
 pub mod unchecked_l1_handler_from;
 pub mod unused_arguments;
 pub mod unused_events;
@@ -28,5 +29,6 @@ pub fn get_detectors() -> Vec<Box<dyn Detector>> {
         Box::<read_only_reentrancy::ReadOnlyReentrancy>::default(),
         Box::<unchecked_l1_handler_from::UncheckedL1HandlerFrom>::default(),
         Box::<felt252_overflow::Felt252Overflow>::default(),
+        Box::<tx_origin::TxOrigin>::default(),
     ]
 }
