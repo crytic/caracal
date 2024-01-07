@@ -1,21 +1,26 @@
-use array::{ArrayTrait, SpanTrait};
-use bytes_31::{
+use core::array::{ArrayTrait, SpanTrait};
+use core::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
     POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
 };
-use clone::Clone;
-use cmp::min;
-use integer::{u128_safe_divmod, U32TryIntoNonZero};
-use option::OptionTrait;
-use traits::{Into, TryInto};
-use zeroable::NonZeroIntoImpl;
+use core::clone::Clone;
+use core::cmp::min;
+use core::integer::{u128_safe_divmod, U32TryIntoNonZero};
+use core::option::OptionTrait;
+use core::traits::{Into, TryInto};
+use core::serde::Serde;
+use core::zeroable::NonZeroIntoImpl;
 
+/// A magic constant for identifying serialization of ByteArrays. An array of felt252s with this
+/// magic as one of the felt252s indicates that right after it you should expect a serialized
+/// ByteArray. This is currently used mainly for prints and panics.
+const BYTE_ARRAY_MAGIC: felt252 = 0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 // TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-#[derive(Drop, Clone, PartialEq)]
+#[derive(Drop, Clone, PartialEq, Serde, Default)]
 struct ByteArray {
     // Full "words" of 31 bytes each. The first byte of each word in the byte array
     // is the most significant byte in the word.
@@ -29,11 +34,7 @@ struct ByteArray {
     pending_word_len: usize,
 }
 
-impl ByteArrayDefault of Default<ByteArray> {
-    fn default() -> ByteArray {
-        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
-    }
-}
+impl ByteArrayStringLiteral of core::string::StringLiteral<ByteArray>;
 
 #[generate_trait]
 impl ByteArrayImpl of ByteArrayTrait {
@@ -88,16 +89,7 @@ impl ByteArrayImpl of ByteArrayTrait {
         let mut other_data = other.data.span();
 
         if self.pending_word_len == 0 {
-            loop {
-                match other_data.pop_front() {
-                    Option::Some(current_word) => {
-                        self.data.append(*current_word);
-                    },
-                    Option::None => {
-                        break;
-                    }
-                };
-            };
+            self.data.append_span(other_data);
             self.pending_word = *other.pending_word;
             self.pending_word_len = *other.pending_word_len;
             return;
@@ -111,9 +103,7 @@ impl ByteArrayImpl of ByteArrayTrait {
                     Option::Some(current_word) => {
                         self.append_split_index_16((*current_word).into());
                     },
-                    Option::None => {
-                        break;
-                    }
+                    Option::None => { break; }
                 };
             };
         } else if self.pending_word_len < BYTES_IN_U128 {
@@ -125,9 +115,7 @@ impl ByteArrayImpl of ByteArrayTrait {
                                 (*current_word).into(), self.pending_word_len
                             );
                     },
-                    Option::None => {
-                        break;
-                    }
+                    Option::None => { break; }
                 };
             };
         } else {
@@ -140,9 +128,7 @@ impl ByteArrayImpl of ByteArrayTrait {
                                 (*current_word).into(), self.pending_word_len
                             );
                     },
-                    Option::None => {
-                        break;
-                    }
+                    Option::None => { break; }
                 };
             };
         }
@@ -223,9 +209,7 @@ impl ByteArrayImpl of ByteArrayTrait {
                 Option::Some(current_word) => {
                     result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
                 },
-                Option::None => {
-                    break;
-                }
+                Option::None => { break; }
             };
         };
         result
@@ -356,7 +340,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     }
 }
 
-impl U128Add of Add<ByteArray> {
+impl ByteArrayAdd of Add<ByteArray> {
     #[inline]
     fn add(lhs: ByteArray, rhs: ByteArray) -> ByteArray {
         ByteArrayTrait::concat(@lhs, @rhs)

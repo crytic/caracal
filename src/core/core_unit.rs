@@ -1,11 +1,10 @@
-use anyhow::Result;
-use std::path::PathBuf;
-
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
-use cairo_lang_sierra::program_registry::ProgramRegistry;
-
 use crate::compilation::compile;
 use crate::core::compilation_unit::CompilationUnit;
+use anyhow::Result;
+use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::program_registry::ProgramRegistry;
+use rayon::prelude::*;
+use std::path::PathBuf;
 
 pub struct CoreOpts {
     pub target: PathBuf,
@@ -21,7 +20,7 @@ impl CoreUnit {
     pub fn new(opts: CoreOpts) -> Result<Self> {
         let program_compiled = compile(opts)?;
         let compilation_units = program_compiled
-            .iter()
+            .par_iter()
             .map(|p| {
                 let mut compilation_unit = CompilationUnit::new(
                     p.sierra.clone(),

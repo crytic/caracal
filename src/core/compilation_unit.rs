@@ -132,7 +132,7 @@ impl CompilationUnit {
             let full_name = f.id.to_string();
             if full_name.contains("::__wrapper_") {
                 // This case happens for cairo >= 2.2.0
-                let function_name = full_name.replace("__wrapper_", "");
+                let function_name = full_name.replace("__wrapper__", "").replace("__", "::");
                 if function_name.ends_with("::constructor") {
                     constructors.insert(function_name);
                 } else {
@@ -175,7 +175,7 @@ impl CompilationUnit {
                 // External function, we need to check in the abi if it's view or external
                 let function_name = full_name.rsplit_once("::").unwrap().1;
 
-                for item in self.abi.items.iter() {
+                for item in self.abi.clone() {
                     match item {
                         AbiFunction(function) => {
                             if function.name == function_name {
@@ -247,7 +247,7 @@ impl CompilationUnit {
             } else {
                 // Event or private function
                 // Could be an event emission or a private function in the contract's module
-                if full_name.contains("::ContractStateEventEmitter::emit::") {
+                if full_name.contains("::emit::") {
                     f.set_ty(Type::Event);
                 } else if full_name.ends_with(']') {
                     f.set_ty(Type::Loop);
@@ -348,17 +348,35 @@ impl CompilationUnit {
         }
 
         let mut changed = true;
-        // Iterate external, l1_handler, private functions and propagate the taints to each private function they call
+        // Iterate external, l1_handler, private, loop functions and propagate the taints to each private function they call
         // until a fixpoint when no new informations were propagated
-        while changed {
-            changed = false;
-
-            for calling_function in self.functions.iter().filter(|f| {
+        let mut functions_to_check: HashSet<String> = self
+            .functions
+            .iter()
+            .filter(|f| {
                 matches!(
                     f.ty(),
                     Type::External | Type::L1Handler | Type::Private | Type::Loop
                 )
+            })
+            .map(|f| f.name())
+            .collect();
+
+        // We need to use changed and not !functions_to_check.is_empty() because it can contain functions that are never removed
+        // such as Core and it would be an infinite loop
+        while changed {
+            changed = false;
+
+            let functions_to_check_copy = functions_to_check.clone();
+            for calling_function in self.functions.iter().filter(|f| {
+                functions_to_check_copy.contains(&f.name())
+                    && matches!(
+                        f.ty(),
+                        Type::External | Type::L1Handler | Type::Private | Type::Loop
+                    )
             }) {
+                functions_to_check.remove(&calling_function.name());
+
                 for function_call in calling_function
                     .private_functions_calls()
                     .chain(calling_function.loop_functions_calls())
@@ -424,14 +442,24 @@ impl CompilationUnit {
                                         let private_taint =
                                             self.taint.get_mut(&function_called_name).unwrap();
 
-                                        // We convert the id to be the private function's formal parameter id and not the actual parameter id
-                                        let sink_converted = WrapperVariable::new(
-                                            function_called_name,
-                                            VarId::new(sink.variable().id - invoc.args[0].id),
-                                        );
-                                        // Add the source i.e. the variable of the external function
-                                        if private_taint.add_taint(source, sink_converted) {
-                                            changed = true;
+                                        // The VarId used when calling a function may not have the IDs increasing sequentially
+                                        // so to convert the ID we have to iterate the arguments and use the index where we find
+                                        // our sink VarId
+                                        for (i, var) in invoc.args.iter().enumerate() {
+                                            if var.id == sink.variable().id {
+                                                // We convert the id to be the private function's formal parameter id and not the actual parameter id
+                                                let sink_converted = WrapperVariable::new(
+                                                    function_called_name.clone(),
+                                                    VarId::new(i.try_into().unwrap()),
+                                                );
+
+                                                // Add the source i.e. the variable of the external function
+                                                if private_taint.add_taint(source, sink_converted) {
+                                                    functions_to_check.insert(function_called_name);
+                                                    changed = true;
+                                                }
+                                                break;
+                                            }
                                         }
                                     }
                                 }

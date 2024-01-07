@@ -1,5 +1,5 @@
-use zeroable::Zeroable;
-use serde::Serde;
+use core::serde::Serde;
+use core::hash::{Hash, HashStateTrait};
 
 #[derive(Copy, Drop)]
 extern type ClassHash;
@@ -23,28 +23,28 @@ impl ClassHashIntoFelt252 of Into<ClassHash, felt252> {
     }
 }
 
-impl ClassHashZeroable of Zeroable<ClassHash> {
+impl ClassHashZero of core::num::traits::Zero<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
     #[inline(always)]
-    fn is_zero(self: ClassHash) -> bool {
-        class_hash_to_felt252(self).is_zero()
+    fn is_zero(self: @ClassHash) -> bool {
+        core::felt_252::Felt252Zero::is_zero(@class_hash_to_felt252(*self))
     }
     #[inline(always)]
-    fn is_non_zero(self: ClassHash) -> bool {
+    fn is_non_zero(self: @ClassHash) -> bool {
         !self.is_zero()
     }
 }
 
-impl ClassHashSerde of serde::Serde<ClassHash> {
+impl ClassHashZeroable = core::zeroable::zero_based::ZeroableImpl<ClassHash, ClassHashZero>;
+
+impl ClassHashSerde of Serde<ClassHash> {
     fn serialize(self: @ClassHash, ref output: Array<felt252>) {
         class_hash_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ClassHash> {
-        Option::Some(
-            class_hash_try_from_felt252(serde::Serde::<felt252>::deserialize(ref serialized)?)?
-        )
+        Option::Some(class_hash_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?)
     }
 }
 
@@ -58,3 +58,6 @@ impl ClassHashPartialEq of PartialEq<ClassHash> {
         !(lhs == rhs)
     }
 }
+
+impl HashClassHash<S, +HashStateTrait<S>, +Drop<S>> =
+    core::hash::into_felt252_based::HashImpl<ClassHash, S>;

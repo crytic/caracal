@@ -1,9 +1,9 @@
-use box::Box;
-use option::OptionTrait;
-use array::Span;
-use traits::Into;
-use traits::TryInto;
-use zeroable::Zeroable;
+use core::box::Box;
+use core::option::OptionTrait;
+use core::array::Span;
+use core::traits::Into;
+use core::traits::TryInto;
+use core::zeroable::Zeroable;
 
 // Re-imports
 // Store
@@ -41,6 +41,10 @@ use eth_address::{
     EthAddress, EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress
 };
 
+// EthSignature
+mod eth_signature;
+use eth_signature::verify_eth_signature;
+
 // ClassHash
 mod class_hash;
 use class_hash::{
@@ -50,8 +54,8 @@ use class_hash::{
 
 mod info;
 use info::{
-    ExecutionInfo, BlockInfo, TxInfo, get_execution_info, get_caller_address, get_contract_address,
-    get_block_info, get_tx_info, get_block_timestamp
+    v2::ExecutionInfo as ExecutionInfo, BlockInfo, v2::TxInfo as TxInfo, get_execution_info,
+    get_caller_address, get_contract_address, get_block_info, get_tx_info, get_block_timestamp
 };
 
 mod event;
@@ -59,6 +63,8 @@ use event::Event;
 
 mod account;
 use account::AccountContract;
+
+mod storage;
 
 extern type System;
 

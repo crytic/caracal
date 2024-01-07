@@ -9,19 +9,25 @@ trait Zeroable<T> {
     fn is_non_zero(self: T) -> bool;
 }
 
-impl Felt252Zeroable of Zeroable<felt252> {
-    fn zero() -> felt252 {
-        0
-    }
-    #[inline(always)]
-    fn is_zero(self: felt252) -> bool {
-        self == 0
-    }
-    #[inline(always)]
-    fn is_non_zero(self: felt252) -> bool {
-        !self.is_zero()
+mod zero_based {
+    impl ZeroableImpl<
+        T, impl ZeroImpl: core::num::traits::Zero<T>, +Drop<T>, +Copy<T>
+    > of super::Zeroable<T> {
+        fn zero() -> T {
+            ZeroImpl::zero()
+        }
+        #[inline(always)]
+        fn is_zero(self: T) -> bool {
+            ZeroImpl::is_zero(@self)
+        }
+        #[inline(always)]
+        fn is_non_zero(self: T) -> bool {
+            ZeroImpl::is_non_zero(@self)
+        }
     }
 }
+
+impl Felt252Zeroable = zero_based::ZeroableImpl<felt252, core::felt_252::Felt252Zero>;
 
 // === NonZero ===
 
@@ -40,7 +46,7 @@ impl NonZeroIntoImpl<T> of Into<NonZero<T>, T> {
     }
 }
 
-impl IsZeroResultIntoBool<T, impl TDrop: Drop<T>> of Into<IsZeroResult<T>, bool> {
+impl IsZeroResultIntoBool<T, +Drop<T>> of Into<IsZeroResult<T>, bool> {
     fn into(self: IsZeroResult<T>) -> bool {
         match self {
             IsZeroResult::Zero => true,

@@ -1,10 +1,9 @@
-use option::OptionTrait;
-use result::ResultTrait;
-use traits::{Into, TryInto, Default, Felt252DictValue};
-use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use serde::Serde;
-use array::ArrayTrait;
-use array::SpanTrait;
+use core::option::OptionTrait;
+use core::result::ResultTrait;
+use core::traits::{Into, TryInto, Default, Felt252DictValue};
+use core::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use core::array::ArrayTrait;
+use core::array::SpanTrait;
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -15,14 +14,7 @@ extern type u128;
 impl NumericLiteralu128 of NumericLiteral<u128>;
 extern fn u128_const<value>() -> u128 nopanic;
 
-impl U128Serde of Serde<u128> {
-    fn serialize(self: @u128, ref output: Array<felt252>) {
-        Into::<u128, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u128> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U128Serde = core::serde::into_felt252_based::SerdeImpl<u128>;
 
 enum U128sFromFelt252Result {
     Narrow: u128,
@@ -282,14 +274,7 @@ extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) no
 
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
 
-impl U8Serde of Serde<u8> {
-    fn serialize(self: @u8, ref output: Array<felt252>) {
-        Into::<u8, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u8> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U8Serde = core::serde::into_felt252_based::SerdeImpl<u8>;
 
 impl U8PartialEq of PartialEq<u8> {
     #[inline(always)]
@@ -479,14 +464,7 @@ extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) 
 
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
 
-impl U16Serde of Serde<u16> {
-    fn serialize(self: @u16, ref output: Array<felt252>) {
-        Into::<u16, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u16> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U16Serde = core::serde::into_felt252_based::SerdeImpl<u16>;
 
 impl U16PartialEq of PartialEq<u16> {
     #[inline(always)]
@@ -676,14 +654,7 @@ extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) 
 
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
 
-impl U32Serde of Serde<u32> {
-    fn serialize(self: @u32, ref output: Array<felt252>) {
-        Into::<u32, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u32> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U32Serde = core::serde::into_felt252_based::SerdeImpl<u32>;
 
 impl U32PartialEq of PartialEq<u32> {
     #[inline(always)]
@@ -873,14 +844,7 @@ extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) 
 
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
 
-impl U64Serde of Serde<u64> {
-    fn serialize(self: @u64, ref output: Array<felt252>) {
-        Into::<u64, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u64> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U64Serde = core::serde::into_felt252_based::SerdeImpl<u64>;
 
 impl U64PartialEq of PartialEq<u64> {
     #[inline(always)]
@@ -1300,7 +1264,7 @@ impl U256BitNot of BitNot<u256> {
     }
 }
 
-#[derive(Copy, Drop, PartialEq, Serde)]
+#[derive(Copy, Drop, Hash, PartialEq, Serde)]
 struct u512 {
     limb0: u128,
     limb1: u128,
@@ -1429,6 +1393,61 @@ impl BoundedU256 of BoundedInt<u256> {
     #[inline(always)]
     fn max() -> u256 nopanic {
         u256 { low: BoundedInt::max(), high: BoundedInt::max() }
+    }
+}
+
+impl BoundedI8 of BoundedInt<i8> {
+    #[inline(always)]
+    fn min() -> i8 nopanic {
+        -0x80
+    }
+    #[inline(always)]
+    fn max() -> i8 nopanic {
+        0x7f
+    }
+}
+
+impl BoundedI16 of BoundedInt<i16> {
+    #[inline(always)]
+    fn min() -> i16 nopanic {
+        -0x8000
+    }
+    #[inline(always)]
+    fn max() -> i16 nopanic {
+        0x7fff
+    }
+}
+
+impl BoundedI32 of BoundedInt<i32> {
+    #[inline(always)]
+    fn min() -> i32 nopanic {
+        -0x80000000
+    }
+    #[inline(always)]
+    fn max() -> i32 nopanic {
+        0x7fffffff
+    }
+}
+
+impl BoundedI64 of BoundedInt<i64> {
+    #[inline(always)]
+    fn min() -> i64 nopanic {
+        -0x8000000000000000
+    }
+    #[inline(always)]
+    fn max() -> i64 nopanic {
+        0x7fffffffffffffff
+    }
+}
+
+impl BoundedI128 of BoundedInt<i128> {
+    #[inline(always)]
+    fn min() -> i128 nopanic {
+        -0x80000000000000000000000000000000
+    }
+    #[inline(always)]
+    fn max() -> i128 nopanic {
+        0x7fffffffffffffffffffffffffffffff
     }
 }
 
@@ -1567,32 +1586,133 @@ extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(Ra
 // Marks `FromType` as upcastable to `ToType`.
 // Do not add user code implementing this trait.
 trait Upcastable<FromType, ToType>;
-impl UpcastableU8U16 of Upcastable<u8, u16> {}
-impl UpcastableU8U32 of Upcastable<u8, u32> {}
-impl UpcastableU8U64 of Upcastable<u8, u64> {}
-impl UpcastableU8U128 of Upcastable<u8, u128> {}
-impl UpcastableU16U32 of Upcastable<u16, u32> {}
-impl UpcastableU16U64 of Upcastable<u16, u64> {}
-impl UpcastableU16U128 of Upcastable<u16, u128> {}
-impl UpcastableU32U64 of Upcastable<u32, u64> {}
-impl UpcastableU32U128 of Upcastable<u32, u128> {}
-impl UpcastableU64U128 of Upcastable<u64, u128> {}
+impl UpcastableU8U16 of Upcastable<u8, u16>;
+impl UpcastableU8I16 of Upcastable<u8, i16>;
+impl UpcastableU8U32 of Upcastable<u8, u32>;
+impl UpcastableU8I32 of Upcastable<u8, i32>;
+impl UpcastableU8U64 of Upcastable<u8, u64>;
+impl UpcastableU8I64 of Upcastable<u8, i64>;
+impl UpcastableU8U128 of Upcastable<u8, u128>;
+impl UpcastableU8I128 of Upcastable<u8, i128>;
+impl UpcastableI8I16 of Upcastable<i8, i16>;
+impl UpcastableI8I32 of Upcastable<i8, i32>;
+impl UpcastableI8I64 of Upcastable<i8, i64>;
+impl UpcastableI8I128 of Upcastable<i8, i128>;
+impl UpcastableU16U32 of Upcastable<u16, u32>;
+impl UpcastableU16I32 of Upcastable<u16, i32>;
+impl UpcastableU16U64 of Upcastable<u16, u64>;
+impl UpcastableU16I64 of Upcastable<u16, i64>;
+impl UpcastableU16U128 of Upcastable<u16, u128>;
+impl UpcastableU16I128 of Upcastable<u16, i128>;
+impl UpcastableI16I32 of Upcastable<i16, i32>;
+impl UpcastableI16I64 of Upcastable<i16, i64>;
+impl UpcastableI16I128 of Upcastable<i16, i128>;
+impl UpcastableU32U64 of Upcastable<u32, u64>;
+impl UpcastableU32I64 of Upcastable<u32, i64>;
+impl UpcastableU32U128 of Upcastable<u32, u128>;
+impl UpcastableU32I128 of Upcastable<u32, i128>;
+impl UpcastableI32I64 of Upcastable<i32, i64>;
+impl UpcastableI32I128 of Upcastable<i32, i128>;
+impl UpcastableU64U128 of Upcastable<u64, u128>;
+impl UpcastableU64I128 of Upcastable<u64, i128>;
+impl UpcastableI64I128 of Upcastable<i64, i128>;
 // Marks `FromType` as downcastable to `ToType`.
 // Do not add user code implementing this trait.
 trait Downcastable<FromType, ToType>;
-impl DowncastableU128U64 of Downcastable<u128, u64> {}
-impl DowncastableU128U32 of Downcastable<u128, u32> {}
-impl DowncastableU128U16 of Downcastable<u128, u16> {}
-impl DowncastableU128U8 of Downcastable<u128, u8> {}
+impl DowncastableU8I8 of Downcastable<u8, i8>;
+impl DowncastableU8I16 of Downcastable<u8, i16>;
+impl DowncastableU8U16 of Downcastable<u8, u16>;
+impl DowncastableU8I32 of Downcastable<u8, i32>;
+impl DowncastableU8U32 of Downcastable<u8, u32>;
+impl DowncastableU8I64 of Downcastable<u8, i64>;
+impl DowncastableU8U64 of Downcastable<u8, u64>;
+impl DowncastableU8I128 of Downcastable<u8, i128>;
+impl DowncastableU8U128 of Downcastable<u8, u128>;
+impl DowncastableI8U8 of Downcastable<i8, u8>;
+impl DowncastableI8I16 of Downcastable<i8, i16>;
+impl DowncastableI8U16 of Downcastable<i8, u16>;
+impl DowncastableI8I32 of Downcastable<i8, i32>;
+impl DowncastableI8U32 of Downcastable<i8, u32>;
+impl DowncastableI8I64 of Downcastable<i8, i64>;
+impl DowncastableI8U64 of Downcastable<i8, u64>;
+impl DowncastableI8I128 of Downcastable<i8, i128>;
+impl DowncastableI8U128 of Downcastable<i8, u128>;
 
-impl DowncastableU64U32 of Downcastable<u64, u32> {}
-impl DowncastableU64U16 of Downcastable<u64, u16> {}
-impl DowncastableU64U8 of Downcastable<u64, u8> {}
+impl DowncastableU16I8 of Downcastable<u16, i8>;
+impl DowncastableU16U8 of Downcastable<u16, u8>;
+impl DowncastableU16I16 of Downcastable<u16, i16>;
+impl DowncastableU16I32 of Downcastable<u16, i32>;
+impl DowncastableU16U32 of Downcastable<u16, u32>;
+impl DowncastableU16I64 of Downcastable<u16, i64>;
+impl DowncastableU16U64 of Downcastable<u16, u64>;
+impl DowncastableU16I128 of Downcastable<u16, i128>;
+impl DowncastableU16U128 of Downcastable<u16, u128>;
+impl DowncastableI16I8 of Downcastable<i16, i8>;
+impl DowncastableI16U8 of Downcastable<i16, u8>;
+impl DowncastableI16U16 of Downcastable<i16, u16>;
+impl DowncastableI16I32 of Downcastable<i16, i32>;
+impl DowncastableI16U32 of Downcastable<i16, u32>;
+impl DowncastableI16I64 of Downcastable<i16, i64>;
+impl DowncastableI16U64 of Downcastable<i16, u64>;
+impl DowncastableI16I128 of Downcastable<i16, i128>;
+impl DowncastableI16U128 of Downcastable<i16, u128>;
 
-impl DowncastableU32U16 of Downcastable<u32, u16> {}
-impl DowncastableU32U8 of Downcastable<u32, u8> {}
+impl DowncastableU32I8 of Downcastable<u32, i8>;
+impl DowncastableU32U8 of Downcastable<u32, u8>;
+impl DowncastableU32I16 of Downcastable<u32, i16>;
+impl DowncastableU32U16 of Downcastable<u32, u16>;
+impl DowncastableU32I32 of Downcastable<u32, i32>;
+impl DowncastableU32I64 of Downcastable<u32, i64>;
+impl DowncastableU32U64 of Downcastable<u32, u64>;
+impl DowncastableU32I128 of Downcastable<u32, i128>;
+impl DowncastableU32U128 of Downcastable<u32, u128>;
+impl DowncastableI32I8 of Downcastable<i32, i8>;
+impl DowncastableI32U8 of Downcastable<i32, u8>;
+impl DowncastableI32I16 of Downcastable<i32, i16>;
+impl DowncastableI32U16 of Downcastable<i32, u16>;
+impl DowncastableI32U32 of Downcastable<i32, u32>;
+impl DowncastableI32I64 of Downcastable<i32, i64>;
+impl DowncastableI32U64 of Downcastable<i32, u64>;
+impl DowncastableI32I128 of Downcastable<i32, i128>;
+impl DowncastableI32U128 of Downcastable<i32, u128>;
 
-impl DowncastableU16U8 of Downcastable<u16, u8> {}
+impl DowncastableU64I8 of Downcastable<u64, i8>;
+impl DowncastableU64U8 of Downcastable<u64, u8>;
+impl DowncastableU64I16 of Downcastable<u64, i16>;
+impl DowncastableU64U16 of Downcastable<u64, u16>;
+impl DowncastableU64I32 of Downcastable<u64, i32>;
+impl DowncastableU64U32 of Downcastable<u64, u32>;
+impl DowncastableU64I64 of Downcastable<u64, i64>;
+impl DowncastableU64I128 of Downcastable<u64, i128>;
+impl DowncastableU64U128 of Downcastable<u64, u128>;
+impl DowncastableI64I8 of Downcastable<i64, i8>;
+impl DowncastableI64U8 of Downcastable<i64, u8>;
+impl DowncastableI64I16 of Downcastable<i64, i16>;
+impl DowncastableI64U16 of Downcastable<i64, u16>;
+impl DowncastableI64I32 of Downcastable<i64, i32>;
+impl DowncastableI64U32 of Downcastable<i64, u32>;
+impl DowncastableI64U64 of Downcastable<i64, u64>;
+impl DowncastableI64I128 of Downcastable<i64, i128>;
+impl DowncastableI64U128 of Downcastable<i64, u128>;
+
+impl DowncastableU128I8 of Downcastable<u128, i8>;
+impl DowncastableU128U8 of Downcastable<u128, u8>;
+impl DowncastableU128I16 of Downcastable<u128, i16>;
+impl DowncastableU128U16 of Downcastable<u128, u16>;
+impl DowncastableU128I32 of Downcastable<u128, i32>;
+impl DowncastableU128U32 of Downcastable<u128, u32>;
+impl DowncastableU128I64 of Downcastable<u128, i64>;
+impl DowncastableU128U64 of Downcastable<u128, u64>;
+impl DowncastableU128I128 of Downcastable<u128, i128>;
+impl DowncastableI128I8 of Downcastable<i128, i8>;
+impl DowncastableI128U8 of Downcastable<i128, u8>;
+impl DowncastableI128I16 of Downcastable<i128, i16>;
+impl DowncastableI128U16 of Downcastable<i128, u16>;
+impl DowncastableI128I32 of Downcastable<i128, i32>;
+impl DowncastableI128U32 of Downcastable<i128, u32>;
+impl DowncastableI128I64 of Downcastable<i128, i64>;
+impl DowncastableI128U64 of Downcastable<i128, u64>;
+impl DowncastableI128U128 of Downcastable<i128, u128>;
 
 /// Default values
 impl U8Default of Default<u8> {
@@ -1674,15 +1794,13 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     }
 }
 
-impl UpcastableInto<From, To, impl FromToUpcastable: Upcastable<From, To>> of Into<From, To> {
+impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
     fn into(self: From) -> To {
         upcast(self)
     }
 }
 
-impl DowncastableTryInto<
-    From, To, impl FromToDowncastable: Downcastable<From, To>
-> of TryInto<From, To> {
+impl DowncastableTryInto<From, To, +Downcastable<From, To>> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
@@ -1778,98 +1896,12 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
     }
 }
 
-// === Zeroable ===
-
-impl U8Zeroable of Zeroable<u8> {
-    fn zero() -> u8 {
-        0
-    }
-    #[inline(always)]
-    fn is_zero(self: u8) -> bool {
-        self == U8Zeroable::zero()
-    }
-    #[inline(always)]
-    fn is_non_zero(self: u8) -> bool {
-        self != U8Zeroable::zero()
-    }
-}
-
-impl U16Zeroable of Zeroable<u16> {
-    fn zero() -> u16 {
-        0
-    }
-    #[inline(always)]
-    fn is_zero(self: u16) -> bool {
-        self == U16Zeroable::zero()
-    }
-    #[inline(always)]
-    fn is_non_zero(self: u16) -> bool {
-        self != U16Zeroable::zero()
-    }
-}
-
-impl U32Zeroable of Zeroable<u32> {
-    fn zero() -> u32 {
-        0
-    }
-    #[inline(always)]
-    fn is_zero(self: u32) -> bool {
-        self == U32Zeroable::zero()
-    }
-    #[inline(always)]
-    fn is_non_zero(self: u32) -> bool {
-        self != U32Zeroable::zero()
-    }
-}
-
-impl U64Zeroable of Zeroable<u64> {
-    fn zero() -> u64 {
-        0
-    }
-    #[inline(always)]
-    fn is_zero(self: u64) -> bool {
-        self == U64Zeroable::zero()
-    }
-    #[inline(always)]
-    fn is_non_zero(self: u64) -> bool {
-        self != U64Zeroable::zero()
-    }
-}
-
-impl U128Zeroable of Zeroable<u128> {
-    fn zero() -> u128 {
-        0
-    }
-    #[inline(always)]
-    fn is_zero(self: u128) -> bool {
-        self == U128Zeroable::zero()
-    }
-    #[inline(always)]
-    fn is_non_zero(self: u128) -> bool {
-        self != U128Zeroable::zero()
-    }
-}
-
-impl U256Zeroable of Zeroable<u256> {
-    fn zero() -> u256 {
-        0
-    }
-    #[inline(always)]
-    fn is_zero(self: u256) -> bool {
-        self == U256Zeroable::zero()
-    }
-    #[inline(always)]
-    fn is_non_zero(self: u256) -> bool {
-        self != U256Zeroable::zero()
-    }
-}
-
 enum SignedIntegerResult<T> {
     InRange: T,
     Underflow: T,
     Overflow: T,
 }
-impl SignedIntegerResultDrop<T, impl TDrop: Drop<T>> of Drop<SignedIntegerResult<T>>;
+impl SignedIntegerResultDrop<T, +Drop<T>> of Drop<SignedIntegerResult<T>>;
 
 #[derive(Copy, Drop)]
 extern type i8;
@@ -1880,6 +1912,8 @@ extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
 
 extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
 extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
+
+impl I8Serde = core::serde::into_felt252_based::SerdeImpl<i8>;
 
 impl I8PartialEq of PartialEq<i8> {
     #[inline(always)]
@@ -1902,8 +1936,8 @@ impl I8Add of Add<i8> {
     fn add(lhs: i8, rhs: i8) -> i8 {
         match i8_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i8_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i8_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i8_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i8_add Overflow'),
         }
     }
 }
@@ -1917,8 +1951,8 @@ impl I8Sub of Sub<i8> {
     fn sub(lhs: i8, rhs: i8) -> i8 {
         match i8_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i8_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i8_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i8_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i8_sub Overflow'),
         }
     }
 }
@@ -1939,7 +1973,7 @@ impl I8Neg of Neg<i8> {
 extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
-        i8_try_from_felt252(i16_to_felt252(i8_wide_mul(lhs, rhs))).expect('i8_mul Overflow')
+        i8_wide_mul(lhs, rhs).try_into().expect('i8_mul Overflow')
     }
 }
 impl I8MulEq of MulEq<i8> {
@@ -1980,6 +2014,8 @@ extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
 extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
 extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
 
+impl I16Serde = core::serde::into_felt252_based::SerdeImpl<i16>;
+
 impl I16PartialEq of PartialEq<i16> {
     #[inline(always)]
     fn eq(lhs: @i16, rhs: @i16) -> bool {
@@ -2001,8 +2037,8 @@ impl I16Add of Add<i16> {
     fn add(lhs: i16, rhs: i16) -> i16 {
         match i16_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i16_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i16_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i16_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i16_add Overflow'),
         }
     }
 }
@@ -2016,8 +2052,8 @@ impl I16Sub of Sub<i16> {
     fn sub(lhs: i16, rhs: i16) -> i16 {
         match i16_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i16_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i16_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i16_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i16_sub Overflow'),
         }
     }
 }
@@ -2038,7 +2074,7 @@ impl I16Neg of Neg<i16> {
 extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
 impl I16Mul of Mul<i16> {
     fn mul(lhs: i16, rhs: i16) -> i16 {
-        i16_try_from_felt252(i32_to_felt252(i16_wide_mul(lhs, rhs))).expect('i16_mul Overflow')
+        i16_wide_mul(lhs, rhs).try_into().expect('i16_mul Overflow')
     }
 }
 impl I16MulEq of MulEq<i16> {
@@ -2079,6 +2115,8 @@ extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
 extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
 extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
 
+impl I32Serde = core::serde::into_felt252_based::SerdeImpl<i32>;
+
 impl I32PartialEq of PartialEq<i32> {
     #[inline(always)]
     fn eq(lhs: @i32, rhs: @i32) -> bool {
@@ -2100,8 +2138,8 @@ impl I32Add of Add<i32> {
     fn add(lhs: i32, rhs: i32) -> i32 {
         match i32_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i32_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i32_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i32_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i32_add Overflow'),
         }
     }
 }
@@ -2115,8 +2153,8 @@ impl I32Sub of Sub<i32> {
     fn sub(lhs: i32, rhs: i32) -> i32 {
         match i32_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i32_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i32_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i32_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i32_sub Overflow'),
         }
     }
 }
@@ -2137,7 +2175,7 @@ impl I32Neg of Neg<i32> {
 extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
 impl I32Mul of Mul<i32> {
     fn mul(lhs: i32, rhs: i32) -> i32 {
-        i32_try_from_felt252(i64_to_felt252(i32_wide_mul(lhs, rhs))).expect('i32_mul Overflow')
+        i32_wide_mul(lhs, rhs).try_into().expect('i32_mul Overflow')
     }
 }
 impl I32MulEq of MulEq<i32> {
@@ -2178,6 +2216,8 @@ extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
 extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
 extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
 
+impl I64Serde = core::serde::into_felt252_based::SerdeImpl<i64>;
+
 impl I64PartialEq of PartialEq<i64> {
     #[inline(always)]
     fn eq(lhs: @i64, rhs: @i64) -> bool {
@@ -2199,8 +2239,8 @@ impl I64Add of Add<i64> {
     fn add(lhs: i64, rhs: i64) -> i64 {
         match i64_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i64_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i64_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i64_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i64_add Overflow'),
         }
     }
 }
@@ -2214,8 +2254,8 @@ impl I64Sub of Sub<i64> {
     fn sub(lhs: i64, rhs: i64) -> i64 {
         match i64_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i64_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i64_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i64_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i64_sub Overflow'),
         }
     }
 }
@@ -2236,7 +2276,7 @@ impl I64Neg of Neg<i64> {
 extern fn i64_wide_mul(lhs: i64, rhs: i64) -> i128 implicits() nopanic;
 impl I64Mul of Mul<i64> {
     fn mul(lhs: i64, rhs: i64) -> i64 {
-        i64_try_from_felt252(i128_to_felt252(i64_wide_mul(lhs, rhs))).expect('i64_mul Overflow')
+        i64_wide_mul(lhs, rhs).try_into().expect('i64_mul Overflow')
     }
 }
 impl I64MulEq of MulEq<i64> {
@@ -2277,6 +2317,8 @@ extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
 extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
 extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
 
+impl I128Serde = core::serde::into_felt252_based::SerdeImpl<i128>;
+
 impl I128PartialEq of PartialEq<i128> {
     #[inline(always)]
     fn eq(lhs: @i128, rhs: @i128) -> bool {
@@ -2298,8 +2340,8 @@ impl I128Add of Add<i128> {
     fn add(lhs: i128, rhs: i128) -> i128 {
         match i128_overflowing_add_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i128_add Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i128_add Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i128_add Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i128_add Overflow'),
         }
     }
 }
@@ -2313,8 +2355,8 @@ impl I128Sub of Sub<i128> {
     fn sub(lhs: i128, rhs: i128) -> i128 {
         match i128_overflowing_sub_impl(lhs, rhs) {
             SignedIntegerResult::InRange(result) => result,
-            SignedIntegerResult::Underflow(_) => panic_with_felt252('i128_sub Underflow'),
-            SignedIntegerResult::Overflow(_) => panic_with_felt252('i128_sub Overflow'),
+            SignedIntegerResult::Underflow(_) => core::panic_with_felt252('i128_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => core::panic_with_felt252('i128_sub Overflow'),
         }
     }
 }
@@ -2329,6 +2371,32 @@ impl I128Neg of Neg<i128> {
     #[inline(always)]
     fn neg(a: i128) -> i128 {
         0 - a
+    }
+}
+
+impl I128Mul of Mul<i128> {
+    fn mul(lhs: i128, rhs: i128) -> i128 {
+        let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        };
+        let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
+            Result::Ok(v) => (v, lhs_neg),
+            Result::Err(v) => (~v + 1, !lhs_neg),
+        };
+        let res_as_u128 = lhs_u127 * rhs_u127;
+        let res_as_felt252: felt252 = if res_neg {
+            -res_as_u128.into()
+        } else {
+            res_as_u128.into()
+        };
+        res_as_felt252.try_into().expect('i128_mul Overflow')
+    }
+}
+impl I128MulEq of MulEq<i128> {
+    #[inline(always)]
+    fn mul_eq(ref self: i128, other: i128) {
+        self = Mul::mul(self, other);
     }
 }
 
@@ -2350,5 +2418,334 @@ impl I128PartialOrd of PartialOrd<i128> {
     #[inline(always)]
     fn gt(lhs: i128, rhs: i128) -> bool {
         i128_diff(rhs, lhs).into_is_err()
+    }
+}
+
+// Zeroable impls
+impl U8Zeroable = core::zeroable::zero_based::ZeroableImpl<u8, U8Zero>;
+impl U16Zeroable = core::zeroable::zero_based::ZeroableImpl<u16, U16Zero>;
+impl U32Zeroable = core::zeroable::zero_based::ZeroableImpl<u32, U32Zero>;
+impl U64Zeroable = core::zeroable::zero_based::ZeroableImpl<u64, U64Zero>;
+impl U128Zeroable = core::zeroable::zero_based::ZeroableImpl<u128, U128Zero>;
+impl U256Zeroable = core::zeroable::zero_based::ZeroableImpl<u256, U256Zero>;
+
+// Zero trait implementations
+impl U8Zero of core::num::traits::Zero<u8> {
+    fn zero() -> u8 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @u8) -> bool {
+        *self == U8Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @u8) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl U16Zero of core::num::traits::Zero<u16> {
+    fn zero() -> u16 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @u16) -> bool {
+        *self == U16Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @u16) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl U32Zero of core::num::traits::Zero<u32> {
+    fn zero() -> u32 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @u32) -> bool {
+        *self == U32Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @u32) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl U64Zero of core::num::traits::Zero<u64> {
+    fn zero() -> u64 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @u64) -> bool {
+        *self == U64Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @u64) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl U128Zero of core::num::traits::Zero<u128> {
+    fn zero() -> u128 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @u128) -> bool {
+        *self == U128Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @u128) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl U256Zero of core::num::traits::Zero<u256> {
+    fn zero() -> u256 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @u256) -> bool {
+        *self == U256Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @u256) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl I8Zero of core::num::traits::Zero<i8> {
+    fn zero() -> i8 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @i8) -> bool {
+        *self == I8Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @i8) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl I16Zero of core::num::traits::Zero<i16> {
+    fn zero() -> i16 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @i16) -> bool {
+        *self == I16Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @i16) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl I32Zero of core::num::traits::Zero<i32> {
+    fn zero() -> i32 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @i32) -> bool {
+        *self == I32Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @i32) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl I64Zero of core::num::traits::Zero<i64> {
+    fn zero() -> i64 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @i64) -> bool {
+        *self == I64Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @i64) -> bool {
+        !self.is_zero()
+    }
+}
+
+impl I128Zero of core::num::traits::Zero<i128> {
+    fn zero() -> i128 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: @i128) -> bool {
+        *self == I128Zero::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: @i128) -> bool {
+        !self.is_zero()
+    }
+}
+
+
+// One trait implementations
+impl U8One of core::num::traits::One<u8> {
+    fn one() -> u8 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: @u8) -> bool {
+        *self == U8One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: @u8) -> bool {
+        !self.is_one()
+    }
+}
+
+impl U16One of core::num::traits::One<u16> {
+    fn one() -> u16 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: @u16) -> bool {
+        *self == U16One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: @u16) -> bool {
+        !self.is_one()
+    }
+}
+
+impl U32One of core::num::traits::One<u32> {
+    fn one() -> u32 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: @u32) -> bool {
+        *self == U32One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: @u32) -> bool {
+        !self.is_one()
+    }
+}
+
+impl U64One of core::num::traits::One<u64> {
+    fn one() -> u64 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: @u64) -> bool {
+        *self == U64One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: @u64) -> bool {
+        !self.is_one()
+    }
+}
+
+impl U128One of core::num::traits::One<u128> {
+    fn one() -> u128 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: @u128) -> bool {
+        *self == U128One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: @u128) -> bool {
+        !self.is_one()
+    }
+}
+
+impl U256One of core::num::traits::One<u256> {
+    fn one() -> u256 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: @u256) -> bool {
+        *self == U256One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: @u256) -> bool {
+        !self.is_one()
+    }
+}
+
+impl I8One of core::num::traits::One<i8> {
+    fn one() -> i8 {
+        1
+    }
+
+    #[inline(always)]
+    fn is_one(self: @i8) -> bool {
+        *self == I8One::one()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @i8) -> bool {
+        !self.is_one()
+    }
+}
+
+impl I16One of core::num::traits::One<i16> {
+    fn one() -> i16 {
+        1
+    }
+
+    #[inline(always)]
+    fn is_one(self: @i16) -> bool {
+        *self == I16One::one()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @i16) -> bool {
+        !self.is_one()
+    }
+}
+
+impl I32One of core::num::traits::One<i32> {
+    fn one() -> i32 {
+        1
+    }
+
+    #[inline(always)]
+    fn is_one(self: @i32) -> bool {
+        *self == I32One::one()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @i32) -> bool {
+        !self.is_one()
+    }
+}
+
+impl I64One of core::num::traits::One<i64> {
+    fn one() -> i64 {
+        1
+    }
+
+    #[inline(always)]
+    fn is_one(self: @i64) -> bool {
+        *self == I64One::one()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @i64) -> bool {
+        !self.is_one()
+    }
+}
+
+impl I128One of core::num::traits::One<i128> {
+    fn one() -> i128 {
+        1
+    }
+
+    #[inline(always)]
+    fn is_one(self: @i128) -> bool {
+        *self == I128One::one()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @i128) -> bool {
+        !self.is_one()
     }
 }

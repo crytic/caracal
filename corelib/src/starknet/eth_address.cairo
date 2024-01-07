@@ -1,12 +1,11 @@
-use debug::PrintTrait;
-use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
-use option::{Option, OptionTrait};
-use serde::Serde;
-use traits::{Into, TryInto};
-use zeroable::Zeroable;
+use core::debug::PrintTrait;
+use core::integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
+use core::option::{Option, OptionTrait};
+use core::serde::Serde;
+use core::traits::{Into, TryInto};
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop, starknet::Store, PartialEq)]
+#[derive(Copy, Drop, Hash, PartialEq, starknet::Store)]
 struct EthAddress {
     address: felt252,
 }
@@ -44,19 +43,21 @@ impl EthAddressSerde of Serde<EthAddress> {
         Serde::<felt252>::deserialize(ref serialized)?.try_into()
     }
 }
-impl EthAddressZeroable of Zeroable<EthAddress> {
+impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     fn zero() -> EthAddress {
         0.try_into().unwrap()
     }
     #[inline(always)]
-    fn is_zero(self: EthAddress) -> bool {
-        self.address.is_zero()
+    fn is_zero(self: @EthAddress) -> bool {
+        core::felt_252::Felt252Zero::is_zero(self.address)
     }
     #[inline(always)]
-    fn is_non_zero(self: EthAddress) -> bool {
+    fn is_non_zero(self: @EthAddress) -> bool {
         !self.is_zero()
     }
 }
+
+impl EthAddressZeroable = core::zeroable::zero_based::ZeroableImpl<EthAddress, EthAddressZero>;
 
 impl EthAddressPrintImpl of PrintTrait<EthAddress> {
     fn print(self: EthAddress) {

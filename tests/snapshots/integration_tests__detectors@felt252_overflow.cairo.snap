@@ -14,13 +14,13 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt252 operation felt252_add([22], [3]) -> ([23]) with the user-controlled parameters: [3], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt252 operation felt252_add([19], [3]) -> ([20]) with the user-controlled parameters: [3], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt252 operation felt252_add([23], [4]) -> ([24]) with the user-controlled parameters: [23],[4], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled uses the felt252 operation felt252_add([20], [4]) -> ([21]) with the user-controlled parameters: [20],[4], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
@@ -32,25 +32,25 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([6], [5]) -> ([10]) with the user-controlled parameters: [6],[5], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([6], [4]) -> ([7]) with the user-controlled parameters: [6],[4], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([7], [4]) -> ([6]) with the user-controlled parameters: [7],[4], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([7], [5]) -> ([10]) with the user-controlled parameters: [7],[5], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([9], [3]) -> ([8]) with the user-controlled parameters: [9],[3], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([8], [3]) -> ([9]) with the user-controlled parameters: [8],[3], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_sub_controlled uses the felt252 operation felt252_sub([16], [3]) -> ([17]) with the user-controlled parameters: [3], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_sub_controlled uses the felt252 operation felt252_sub([13], [3]) -> ([14]) with the user-controlled parameters: [3], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
@@ -68,6 +68,6 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: Medium,
         name: "unused-return",
         confidence: Medium,
-        message: "Return value unused for the function call function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::bad_add>([18], [19]) -> ([17]) in felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled",
+        message: "Return value unused for the function call function_call<user@felt252_overflow::felt252_overflow::Felt252Overflow::bad_add>([14], [15]) -> ([16]) in felt252_overflow::felt252_overflow::Felt252Overflow::bad_add_controlled",
     },
 ]

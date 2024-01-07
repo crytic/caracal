@@ -1,10 +1,10 @@
-use array::ArrayTrait;
-use traits::Into;
-use option::Option;
+use core::array::ArrayTrait;
+use core::traits::Into;
+use core::option::Option;
 
 // Usage:
 //
-// use debug::PrintTrait;
+// use core::debug::PrintTrait;
 //
 // 1.print();
 //
@@ -87,8 +87,46 @@ impl U256PrintImpl of PrintTrait<u256> {
     }
 }
 
+impl I8PrintImpl of PrintTrait<i8> {
+    fn print(self: i8) {
+        Into::<_, felt252>::into(self).print();
+    }
+}
+
+impl I16PrintImpl of PrintTrait<i16> {
+    fn print(self: i16) {
+        Into::<_, felt252>::into(self).print();
+    }
+}
+
+impl I32PrintImpl of PrintTrait<i32> {
+    fn print(self: i32) {
+        Into::<_, felt252>::into(self).print();
+    }
+}
+
+impl I64PrintImpl of PrintTrait<i64> {
+    fn print(self: i64) {
+        Into::<_, felt252>::into(self).print();
+    }
+}
+
+impl I128PrintImpl of PrintTrait<i128> {
+    fn print(self: i128) {
+        Into::<_, felt252>::into(self).print();
+    }
+}
+
 impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
     fn print(mut self: Array<felt252>) {
         print(self);
     }
 }
+
+/// Prints a byte array as a string.
+fn print_byte_array_as_string(self: @ByteArray) {
+    let mut serialized = array![core::byte_array::BYTE_ARRAY_MAGIC];
+    self.serialize(ref serialized);
+    print(serialized)
+}
+

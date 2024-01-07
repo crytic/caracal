@@ -18,9 +18,9 @@ enum bool {
 impl BoolSerde of Serde<bool> {
     fn serialize(self: @bool, ref output: Array<felt252>) {
         if *self {
-            1
+            1_felt252
         } else {
-            0
+            0_felt252
         }.serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<bool> {
@@ -103,6 +103,9 @@ extern type RangeCheck;
 extern type SegmentArena;
 
 // felt252.
+mod felt_252;
+use felt_252::{Felt252One, Felt252Zero};
+
 #[derive(Copy, Drop)]
 extern type felt252;
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
@@ -172,8 +175,8 @@ impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
     fn eq(lhs: @felt252, rhs: @felt252) -> bool {
         match *lhs - *rhs {
-            0 => bool::True(()),
-            _ => bool::False(()),
+            0 => true,
+            _ => false,
         }
     }
     #[inline(always)]
@@ -264,6 +267,9 @@ use integer::{
 // Math.
 mod math;
 
+// Num.
+mod num;
+
 // Cmp.
 mod cmp;
 
@@ -309,6 +315,8 @@ use poseidon::Poseidon;
 // Debug.
 mod debug;
 
+mod fmt;
+
 // Starknet
 mod starknet;
 use starknet::System;
@@ -329,10 +337,20 @@ use bytes_31::{
 
 // BytesArray.
 mod byte_array;
-use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
+
+// String.
+mod string;
+use string::StringLiteral;
+
+// to_byte_array.
+mod to_byte_array;
 
 #[cfg(test)]
 mod test;
 
 // Module for testing only.
 mod testing;
+
+// Preludes.
+mod prelude;

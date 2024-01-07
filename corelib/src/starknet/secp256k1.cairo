@@ -1,9 +1,12 @@
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! secp256k1 curve.
 
-use option::OptionTrait;
+use core::option::OptionTrait;
 use starknet::{
-    EthAddress, secp256_trait::{Secp256Trait, Secp256PointTrait}, SyscallResult, SyscallResultTrait
+    secp256_trait::{
+        Secp256Trait, Secp256PointTrait, recover_public_key, is_signature_entry_valid, Signature
+    },
+    SyscallResult, SyscallResultTrait
 };
 
 #[derive(Copy, Drop)]

@@ -1,5 +1,6 @@
-use zeroable::Zeroable;
-use serde::Serde;
+use core::zeroable::Zeroable;
+use core::serde::Serde;
+use core::hash::{Hash, HashStateTrait};
 
 #[derive(Copy, Drop)]
 extern type ContractAddress;
@@ -23,29 +24,31 @@ impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     }
 }
 
-impl ContractAddressZeroable of Zeroable<ContractAddress> {
+
+impl ContractAddressZero of core::num::traits::Zero<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
     #[inline(always)]
-    fn is_zero(self: ContractAddress) -> bool {
-        contract_address_to_felt252(self).is_zero()
+    fn is_zero(self: @ContractAddress) -> bool {
+        core::felt_252::Felt252Zero::is_zero(@contract_address_to_felt252(*self))
     }
     #[inline(always)]
-    fn is_non_zero(self: ContractAddress) -> bool {
+    fn is_non_zero(self: @ContractAddress) -> bool {
         !self.is_zero()
     }
 }
 
-impl ContractAddressSerde of serde::Serde<ContractAddress> {
+impl ContractAddressZeroable =
+    core::zeroable::zero_based::ZeroableImpl<ContractAddress, ContractAddressZero>;
+
+impl ContractAddressSerde of Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
         contract_address_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
         Option::Some(
-            contract_address_try_from_felt252(
-                serde::Serde::<felt252>::deserialize(ref serialized)?
-            )?
+            contract_address_try_from_felt252(Serde::<felt252>::deserialize(ref serialized)?)?
         )
     }
 }
@@ -60,3 +63,6 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
         !(lhs == rhs)
     }
 }
+
+impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
+    core::hash::into_felt252_based::HashImpl<ContractAddress, S>;
