@@ -13,7 +13,6 @@ use cairo_lang_starknet::abi::{
 };
 use fxhash::FxHashSet;
 use std::collections::{HashMap, HashSet};
-use std::time::Instant;
 
 pub struct CompilationUnit {
     /// The compiled sierra program
