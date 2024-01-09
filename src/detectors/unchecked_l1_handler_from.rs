@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-use fxhash::FxHashSet;
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::analysis::taint::WrapperVariable;
 use crate::core::compilation_unit::CompilationUnit;
@@ -8,6 +6,8 @@ use crate::core::function::{Function, Type};
 use cairo_lang_sierra::extensions::{core::CoreConcreteLibfunc, felt252::Felt252Concrete};
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement};
+use fxhash::FxHashSet;
+use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct UncheckedL1HandlerFrom {}
@@ -43,7 +43,7 @@ impl Detector for UncheckedL1HandlerFrom {
                 let from_address =
                     f.params().map(|p| p.id.clone()).collect::<Vec<VarId>>()[1].clone();
                 let mut sources = FxHashSet::default();
-                sources.insert(WrapperVariable::new(f.name(), from_address));
+                sources.insert(WrapperVariable::new(f.name(), from_address.id));
 
                 // Used to avoid infinite recursion in case of recursive private function calls
                 let mut checked_private_functions = HashSet::new();
@@ -129,7 +129,7 @@ impl UncheckedL1HandlerFrom {
                         let sinks: FxHashSet<WrapperVariable> = invoc
                             .args
                             .iter()
-                            .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                            .map(|v| WrapperVariable::new(function.name(), v.id))
                             .collect();
 
                         let from_tainted_args: FxHashSet<WrapperVariable> = from_tainted_args
@@ -138,7 +138,7 @@ impl UncheckedL1HandlerFrom {
                             .map(|sink| {
                                 WrapperVariable::new(
                                     private_function.name(),
-                                    VarId::new(sink.variable().id - invoc.args[0].id),
+                                    sink.variable() - invoc.args[0].id,
                                 )
                             })
                             .collect();
@@ -165,7 +165,7 @@ impl UncheckedL1HandlerFrom {
         compilation_unit: &CompilationUnit,
         function_name: &str,
     ) -> bool {
-        let sink = WrapperVariable::new(function_name.to_string(), felt252_is_zero_args[0].clone());
+        let sink = WrapperVariable::new(function_name.to_string(), felt252_is_zero_args[0].id);
         let taint = compilation_unit.get_taint(function_name).unwrap();
         // returns true If the felt252_is_zero arguments are tainted by the from_address
         taint.taints_any_sources(sources, &sink)

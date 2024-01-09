@@ -31,7 +31,6 @@ impl CoreUnit {
                 compilation_unit
             })
             .collect();
-
         Ok(CoreUnit { compilation_units })
     }
 

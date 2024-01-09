@@ -1,8 +1,6 @@
-use cairo_lang_sierra::{
-    ids::VarId,
-    program::{GenStatement, Statement as SierraStatement},
-};
-use fxhash::{FxHashMap,FxHashSet};
+use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement};
+use fxhash::{FxHashMap, FxHashSet};
+
 /// Wrapper around a VarId
 /// it's used to univocally identify variables
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -10,11 +8,11 @@ pub struct WrapperVariable {
     /// The function where the variable appear
     function: String,
     /// The variable's id
-    variable: VarId,
+    variable: u64,
 }
 
 impl WrapperVariable {
-    pub fn new(function: String, variable: VarId) -> Self {
+    pub fn new(function: String, variable: u64) -> Self {
         WrapperVariable { function, variable }
     }
 
@@ -24,8 +22,8 @@ impl WrapperVariable {
     }
 
     /// Return the variable
-    pub fn variable(&self) -> &VarId {
-        &self.variable
+    pub fn variable(&self) -> u64 {
+        self.variable
     }
 }
 
@@ -139,12 +137,12 @@ fn analyze(
                     let sinks = map
                         .entry(WrapperVariable {
                             function: function.clone(),
-                            variable: source.clone(),
+                            variable: source.id,
                         })
                         .or_default();
                     sinks.insert(WrapperVariable {
                         function: function.clone(),
-                        variable: sink.clone(),
+                        variable: sink.id,
                     });
                 }
             }
