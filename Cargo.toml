@@ -20,6 +20,7 @@ graphviz-rust = "0.6.2"
 cairo-felt = "0.8.7"
 thiserror = "1.0.47"
 rayon = "1.8"
+fxhash = "0.2.1"
 
 cairo-lang-compiler = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.4.3" }
 cairo-lang-defs = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.4.3" }
@@ -32,6 +33,7 @@ cairo-lang-semantic = { git = "https://github.com/starkware-libs/cairo.git", tag
 cairo-lang-utils = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.4.3" }
 cairo-lang-sierra-generator = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.4.3" }
 cairo-lang-sierra = { git = "https://github.com/starkware-libs/cairo.git", tag = "v2.4.3" }
+
 
 [dev-dependencies]
 insta = { version = "1.30", features = ["glob"] }

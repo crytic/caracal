@@ -1,5 +1,6 @@
-use std::collections::HashSet;
 
+use fxhash::FxHashSet;
+use std::collections::HashSet;
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::analysis::taint::WrapperVariable;
 use crate::core::compilation_unit::CompilationUnit;
@@ -163,7 +164,7 @@ impl ArrayUseAfterPopFront {
 
                 match libfunc {
                     CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Append(_)) => {
-                        let mut sinks = HashSet::new();
+                        let mut sinks = FxHashSet::default();
                         sinks.insert(WrapperVariable::new(function.name(), invoc.args[0].clone()));
 
                         taint.taints_any_sinks(bad_array, &sinks)
@@ -192,7 +193,7 @@ impl ArrayUseAfterPopFront {
                     .expect("Library function not found in the registry");
 
                 if let CoreConcreteLibfunc::FunctionCall(_) = lib_func {
-                    let sinks: HashSet<WrapperVariable> = invoc
+                    let sinks: FxHashSet<WrapperVariable> = invoc
                         .args
                         .iter()
                         .map(|v| WrapperVariable::new(function.name(), v.clone()))
@@ -325,14 +326,14 @@ impl ArrayUseAfterPopFront {
             return false;
         }
 
-        // Not sure if it is required because taint analysis adds all the arugments as
+        // Not sure if it is required because taint analysis adds all the arguments as
         // tainters of the all the return values.
         let returned_bad_arrays: Vec<WrapperVariable> = function
             .get_statements()
             .iter()
             .flat_map(|s| {
                 if let GenStatement::Return(return_vars) = s {
-                    let sinks: HashSet<WrapperVariable> = return_vars
+                    let sinks: FxHashSet<WrapperVariable> = return_vars
                         .iter()
                         .map(|v| WrapperVariable::new(function.name(), v.clone()))
                         .collect();

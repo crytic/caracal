@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-
+use std::time::Instant;
 use super::function::{Function, Type};
 use crate::analysis::taint::Taint;
 use crate::analysis::taint::WrapperVariable;
@@ -13,6 +13,7 @@ use cairo_lang_starknet::abi::{
     Contract, Item::Function as AbiFunction, Item::Interface as AbiInterface,
     Item::L1Handler as AbiL1Handler,
 };
+use fxhash::FxHashSet;
 
 pub struct CompilationUnit {
     /// The compiled sierra program
@@ -86,7 +87,7 @@ impl CompilationUnit {
     /// Return true if the variable is tainted i.e. user inputs can control it in some way
     pub fn is_tainted(&self, function_name: String, variable: VarId) -> bool {
         let wrapped_variable = WrapperVariable::new(function_name, variable);
-        let mut parameters = HashSet::new();
+        let mut parameters = FxHashSet::default();
         for external_function in self
             .functions
             .iter()
@@ -322,15 +323,16 @@ impl CompilationUnit {
             self.taint
                 .insert(f.name(), Taint::new(f.get_statements(), f.name()));
         });
-
+        let start = Instant::now();
         // Propagate taints to private functions
         self.propagate_taints();
+        println!("{:?}",start.elapsed());
     }
 
     /// Propagate the taints from external/l1_handler functions to private functions
     fn propagate_taints(&mut self) {
         // Collect the arguments of all the external/l1_handler functions
-        let mut arguments_external_functions: HashSet<WrapperVariable> = HashSet::new();
+        let mut arguments_external_functions: FxHashSet<WrapperVariable> = FxHashSet::default();
         for function in self
             .functions
             .iter()
@@ -395,7 +397,7 @@ impl CompilationUnit {
                             let external_taint = taint_copy.get(&calling_function.name()).unwrap();
 
                             // Variables used as arguments in the call to the private function
-                            let function_called_args: HashSet<WrapperVariable> = invoc
+                            let function_called_args: FxHashSet<WrapperVariable> = invoc
                                 .args
                                 .iter()
                                 .map(|arg| {
