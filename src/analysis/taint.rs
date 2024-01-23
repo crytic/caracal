@@ -1,8 +1,5 @@
-use cairo_lang_sierra::{
-    ids::VarId,
-    program::{GenStatement, Statement as SierraStatement},
-};
-use std::collections::{HashMap, HashSet};
+use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement};
+use fxhash::{FxHashMap, FxHashSet};
 
 /// Wrapper around a VarId
 /// it's used to univocally identify variables
@@ -11,11 +8,11 @@ pub struct WrapperVariable {
     /// The function where the variable appear
     function: String,
     /// The variable's id
-    variable: VarId,
+    variable: u64,
 }
 
 impl WrapperVariable {
-    pub fn new(function: String, variable: VarId) -> Self {
+    pub fn new(function: String, variable: u64) -> Self {
         WrapperVariable { function, variable }
     }
 
@@ -25,8 +22,8 @@ impl WrapperVariable {
     }
 
     /// Return the variable
-    pub fn variable(&self) -> &VarId {
-        &self.variable
+    pub fn variable(&self) -> u64 {
+        self.variable
     }
 }
 
@@ -35,26 +32,26 @@ pub struct Taint {
     /// Source WrapperVariable to set of sink WrapperVariable
     /// e.g. instruction reads variables 3, 4 and has 5 as output
     /// we will add (3, (5)) and (4, (5)); variable 5 is tainted by 3 and 4
-    map: HashMap<WrapperVariable, HashSet<WrapperVariable>>,
+    map: FxHashMap<WrapperVariable, FxHashSet<WrapperVariable>>,
 }
 
 impl Taint {
     pub fn new(instructions: &[SierraStatement], function: String) -> Self {
-        let mut map = HashMap::new();
+        let mut map = FxHashMap::default();
         analyze(&mut map, instructions, function);
 
         Taint { map }
     }
 
     /// Returns variables tainted in a single step by source
-    pub fn single_step_taint(&self, source: &WrapperVariable) -> HashSet<WrapperVariable> {
+    pub fn single_step_taint(&self, source: &WrapperVariable) -> FxHashSet<WrapperVariable> {
         self.map.get(source).cloned().unwrap_or_default()
     }
 
     /// Returns variables tainted in zero or more steps by source
-    pub fn multi_step_taint(&self, source: &WrapperVariable) -> HashSet<WrapperVariable> {
-        let mut result = HashSet::new();
-        let mut update = HashSet::from([source.clone()]);
+    pub fn multi_step_taint(&self, source: &WrapperVariable) -> FxHashSet<WrapperVariable> {
+        let mut result = FxHashSet::default();
+        let mut update = FxHashSet::from_iter([source.clone()]);
         while !update.is_subset(&result) {
             result.extend(update.iter().cloned());
             update = update
@@ -69,7 +66,7 @@ impl Taint {
     pub fn taints_any_sinks_variable(
         &self,
         source: &WrapperVariable,
-        sinks: &HashSet<WrapperVariable>,
+        sinks: &FxHashSet<WrapperVariable>,
     ) -> Vec<WrapperVariable> {
         self.multi_step_taint(source)
             .into_iter()
@@ -81,7 +78,7 @@ impl Taint {
     pub fn taints_any_sinks(
         &self,
         source: &WrapperVariable,
-        sinks: &HashSet<WrapperVariable>,
+        sinks: &FxHashSet<WrapperVariable>,
     ) -> bool {
         self.multi_step_taint(source)
             .iter()
@@ -91,7 +88,7 @@ impl Taint {
     /// Returns the sources that taint the sink
     pub fn taints_any_sources_variable(
         &self,
-        sources: &HashSet<WrapperVariable>,
+        sources: &FxHashSet<WrapperVariable>,
         sink: &WrapperVariable,
     ) -> Vec<WrapperVariable> {
         sources
@@ -104,7 +101,7 @@ impl Taint {
     /// Returns true if the sink is tainted by any source
     pub fn taints_any_sources(
         &self,
-        sources: &HashSet<WrapperVariable>,
+        sources: &FxHashSet<WrapperVariable>,
         sink: &WrapperVariable,
     ) -> bool {
         sources
@@ -121,7 +118,7 @@ impl Taint {
 
 /// Analyze each instruction in the current function and populate the taint map
 fn analyze(
-    map: &mut HashMap<WrapperVariable, HashSet<WrapperVariable>>,
+    map: &mut FxHashMap<WrapperVariable, FxHashSet<WrapperVariable>>,
     instructions: &[SierraStatement],
     function: String,
 ) {
@@ -140,12 +137,12 @@ fn analyze(
                     let sinks = map
                         .entry(WrapperVariable {
                             function: function.clone(),
-                            variable: source.clone(),
+                            variable: source.id,
                         })
                         .or_default();
                     sinks.insert(WrapperVariable {
                         function: function.clone(),
-                        variable: sink.clone(),
+                        variable: sink.id,
                     });
                 }
             }

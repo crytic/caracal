@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use super::function::{Function, Type};
 use crate::analysis::taint::Taint;
 use crate::analysis::taint::WrapperVariable;
@@ -13,6 +11,8 @@ use cairo_lang_starknet::abi::{
     Contract, Item::Function as AbiFunction, Item::Interface as AbiInterface,
     Item::L1Handler as AbiL1Handler,
 };
+use fxhash::FxHashSet;
+use std::collections::{HashMap, HashSet};
 
 pub struct CompilationUnit {
     /// The compiled sierra program
@@ -85,18 +85,15 @@ impl CompilationUnit {
 
     /// Return true if the variable is tainted i.e. user inputs can control it in some way
     pub fn is_tainted(&self, function_name: String, variable: VarId) -> bool {
-        let wrapped_variable = WrapperVariable::new(function_name, variable);
-        let mut parameters = HashSet::new();
+        let wrapped_variable = WrapperVariable::new(function_name, variable.id);
+        let mut parameters = FxHashSet::default();
         for external_function in self
             .functions
             .iter()
             .filter(|f| matches!(f.ty(), Type::External | Type::L1Handler | Type::View))
         {
             for param in external_function.params().skip(1) {
-                parameters.insert(WrapperVariable::new(
-                    external_function.name(),
-                    param.id.clone(),
-                ));
+                parameters.insert(WrapperVariable::new(external_function.name(), param.id.id));
             }
         }
         // Get the taint for the function where the variable appear
@@ -330,7 +327,7 @@ impl CompilationUnit {
     /// Propagate the taints from external/l1_handler functions to private functions
     fn propagate_taints(&mut self) {
         // Collect the arguments of all the external/l1_handler functions
-        let mut arguments_external_functions: HashSet<WrapperVariable> = HashSet::new();
+        let mut arguments_external_functions: FxHashSet<WrapperVariable> = FxHashSet::default();
         for function in self
             .functions
             .iter()
@@ -338,7 +335,7 @@ impl CompilationUnit {
         {
             for param in function.params() {
                 arguments_external_functions
-                    .insert(WrapperVariable::new(function.name(), param.id.clone()));
+                    .insert(WrapperVariable::new(function.name(), param.id.id));
             }
         }
 
@@ -395,12 +392,10 @@ impl CompilationUnit {
                             let external_taint = taint_copy.get(&calling_function.name()).unwrap();
 
                             // Variables used as arguments in the call to the private function
-                            let function_called_args: HashSet<WrapperVariable> = invoc
+                            let function_called_args: FxHashSet<WrapperVariable> = invoc
                                 .args
                                 .iter()
-                                .map(|arg| {
-                                    WrapperVariable::new(calling_function.name(), arg.clone())
-                                })
+                                .map(|arg| WrapperVariable::new(calling_function.name(), arg.id))
                                 .collect();
 
                             // Calling function's parameters
@@ -419,10 +414,7 @@ impl CompilationUnit {
                                 }
                                 // Check if the arguments used to call the private function are tainted by the calling function's parameters
                                 for sink in external_taint.taints_any_sinks_variable(
-                                    &WrapperVariable::new(
-                                        calling_function.name(),
-                                        param.id.clone(),
-                                    ),
+                                    &WrapperVariable::new(calling_function.name(), param.id.id),
                                     &function_called_args,
                                 ) {
                                     // If the sink is tainted by some parameters of external functions
@@ -446,11 +438,11 @@ impl CompilationUnit {
                                         // so to convert the ID we have to iterate the arguments and use the index where we find
                                         // our sink VarId
                                         for (i, var) in invoc.args.iter().enumerate() {
-                                            if var.id == sink.variable().id {
+                                            if var.id == sink.variable() {
                                                 // We convert the id to be the private function's formal parameter id and not the actual parameter id
                                                 let sink_converted = WrapperVariable::new(
                                                     function_called_name.clone(),
-                                                    VarId::new(i.try_into().unwrap()),
+                                                    i.try_into().unwrap(),
                                                 );
 
                                                 // Add the source i.e. the variable of the external function
