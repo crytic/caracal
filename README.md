@@ -92,12 +92,12 @@ Num | Detector | What it Detects | Impact | Confidence | Cairo
 6 | `unused-events` | Events defined but not emitted | Medium | Medium | 1 & 2
 7 | `unused-return` | Unused return values | Medium | Medium | 1 & 2
 8 | `unenforced-view` | Function has view decorator but modifies state | Medium | Medium | 1
-9 | `unused-arguments` | Unused arguments | Low | Medium | 1 & 2
-10 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
-11 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
-12 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
-13 | `use-after-pop-front` | Detect use of an array or a span after removing element(s) | Low | Medium | 1 & 2
-14 | `dangerous-use-of-transaction-origin` | "Detect usage of the transaction origin account address for the authentication or authorization
+9 | `tx-origin` | Detect usage of the transaction origin address as access control | Medium | Medium | 2
+10 | `unused-arguments` | Unused arguments | Low | Medium | 1 & 2
+11 | `reentrancy-benign` | Detect when a storage variable is written after an external call but not read before | Low | Medium | 1 & 2
+12 | `reentrancy-events` | Detect when an event is emitted after an external call leading to out-of-order events | Low | Medium | 1 & 2
+13 | `dead-code` | Private functions never used | Low | Medium | 1 & 2
+14 | `use-after-pop-front` | Detect use of an array or a span after removing element(s) | Low | Medium | 1 & 2
 
 The Cairo column represent the compiler version(s) for which the detector is valid.
 
