@@ -8,12 +8,12 @@ input_file: tests/detectors/tx_origin.cairo
         impact: High,
         name: "dangerous-use-of-transaction-origin",
         confidence: Medium,
-        message: "The transaction origin contract addresses is used in an authentication check in the function tx_origin::tx_origin::TxOrigin::TxOrigin::bad",
+        message: "The transaction origin contract address is used in an authentication check in the function tx_origin::tx_origin::TxOrigin::bad",
     },
     Result {
         impact: High,
         name: "dangerous-use-of-transaction-origin",
         confidence: Medium,
-        message: "The transaction origin contract addresses is used in an authentication check in the function tx_origin::tx_origin::TxOrigin::TxOrigin::bad_indirect",
+        message: "The transaction origin contract address is used in an authentication check in the function tx_origin::tx_origin::TxOrigin::bad_indirect",
     },
 ]
