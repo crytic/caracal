@@ -8,17 +8,32 @@ use crate::core::function::{Function, Type};
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreTypeConcrete};
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement};
+use fxhash::FxHashSet;
 
 #[derive(Default)]
-pub struct ArrayUseAfterPopFront {}
+pub struct UseAfterPopFront {}
 
-impl Detector for ArrayUseAfterPopFront {
+enum CollectionType {
+    Array,
+    Span,
+}
+
+impl CollectionType {
+    fn is_array(&self) -> bool {
+        match self {
+            CollectionType::Array => true,
+            CollectionType::Span => false,
+        }
+    }
+}
+
+impl Detector for UseAfterPopFront {
     fn name(&self) -> &str {
-        "array-use-after-pop-front"
+        "use-after-pop-front"
     }
 
     fn description(&self) -> &str {
-        "Detect use of an array after removing element(s)"
+        "Detect use of an array or a span after removing element(s)"
     }
 
     fn confidence(&self) -> Confidence {
@@ -35,7 +50,7 @@ impl Detector for ArrayUseAfterPopFront {
 
         for compilation_unit in compilation_units.iter() {
             for function in compilation_unit.functions_user_defined() {
-                let pop_fronts: Vec<(usize, WrapperVariable)> = function
+                let pop_fronts: Vec<(usize, WrapperVariable, CollectionType)> = function
                     .get_statements()
                     .iter()
                     .enumerate()
@@ -50,12 +65,24 @@ impl Detector for ArrayUseAfterPopFront {
                                 CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::PopFront(_)) => {
                                     Some((
                                         index,
-                                        WrapperVariable::new(
-                                            function.name(),
-                                            invoc.args[0].clone(),
-                                        ),
+                                        WrapperVariable::new(function.name(), invoc.args[0].id),
+                                        CollectionType::Array,
                                     ))
                                 }
+                                CoreConcreteLibfunc::Array(
+                                    ArrayConcreteLibfunc::SnapshotPopFront(_),
+                                ) => Some((
+                                    index,
+                                    WrapperVariable::new(function.name(), invoc.args[0].id),
+                                    CollectionType::Span,
+                                )),
+                                CoreConcreteLibfunc::Array(
+                                    ArrayConcreteLibfunc::SnapshotPopBack(_),
+                                ) => Some((
+                                    index,
+                                    WrapperVariable::new(function.name(), invoc.args[0].id),
+                                    CollectionType::Span,
+                                )),
                                 _ => None,
                             }
                         }
@@ -63,22 +90,31 @@ impl Detector for ArrayUseAfterPopFront {
                     })
                     .collect();
 
-                let bad_array_used: Vec<&(usize, WrapperVariable)> = pop_fronts
-                    .iter()
-                    .filter(|(index, bad_array)| {
-                        self.is_array_used_after_pop_front(
-                            compilation_unit,
-                            function,
-                            bad_array,
-                            *index,
-                        )
-                    })
-                    .collect();
+                // Required to silence clippy too-complex-type warning
+                type BadCollectionType<'a, 'b> = Vec<(&'a WrapperVariable, &'b CollectionType)>;
+
+                let (bad_array_used, bad_span_used): (BadCollectionType, BadCollectionType) =
+                    pop_fronts
+                        .iter()
+                        .filter_map(|(index, bad_array, collection_type)| {
+                            let is_used = self.is_used_after_pop_front(
+                                compilation_unit,
+                                function,
+                                bad_array,
+                                *index,
+                            );
+                            if is_used {
+                                Some((bad_array, collection_type))
+                            } else {
+                                None
+                            }
+                        })
+                        .partition(|(_, collection_type)| collection_type.is_array());
 
                 if !bad_array_used.is_empty() {
                     let array_ids = bad_array_used
                         .iter()
-                        .map(|f| f.1.variable().id)
+                        .map(|f| f.0.variable())
                         .collect::<Vec<u64>>();
                     let message = match array_ids.len() {
                         1 => format!(
@@ -99,6 +135,31 @@ impl Detector for ArrayUseAfterPopFront {
                         message,
                     });
                 }
+
+                if !bad_span_used.is_empty() {
+                    let span_ids = bad_span_used
+                        .iter()
+                        .map(|f| f.0.variable())
+                        .collect::<Vec<u64>>();
+                    let message = match span_ids.len() {
+                        1 => format!(
+                            "The span {:?} is used after removing elements from it in the function {}",
+                            span_ids,
+                            &function.name()
+                        ),
+                        _ => format!(
+                            "The spans {:?} are used after removing elements from them in the function {}",
+                            span_ids,
+                            &function.name()
+                        )
+                    };
+                    results.insert(Result {
+                        name: self.name().to_string(),
+                        impact: self.impact(),
+                        confidence: self.confidence(),
+                        message,
+                    });
+                }
             }
         }
 
@@ -106,8 +167,8 @@ impl Detector for ArrayUseAfterPopFront {
     }
 }
 
-impl ArrayUseAfterPopFront {
-    fn is_array_used_after_pop_front(
+impl UseAfterPopFront {
+    fn is_used_after_pop_front(
         &self,
         compilation_unit: &CompilationUnit,
         function: &Function,
@@ -163,8 +224,8 @@ impl ArrayUseAfterPopFront {
 
                 match libfunc {
                     CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Append(_)) => {
-                        let mut sinks = HashSet::new();
-                        sinks.insert(WrapperVariable::new(function.name(), invoc.args[0].clone()));
+                        let mut sinks = FxHashSet::default();
+                        sinks.insert(WrapperVariable::new(function.name(), invoc.args[0].id));
 
                         taint.taints_any_sinks(bad_array, &sinks)
                     }
@@ -192,10 +253,10 @@ impl ArrayUseAfterPopFront {
                     .expect("Library function not found in the registry");
 
                 if let CoreConcreteLibfunc::FunctionCall(_) = lib_func {
-                    let sinks: HashSet<WrapperVariable> = invoc
+                    let sinks: FxHashSet<WrapperVariable> = invoc
                         .args
                         .iter()
-                        .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                        .map(|v| WrapperVariable::new(function.name(), v.id))
                         .collect();
 
                     return taint.taints_any_sinks(bad_array, &sinks);
@@ -207,8 +268,8 @@ impl ArrayUseAfterPopFront {
 
     // check if the bad array is returned by the function
     // if yes then check if its a loop function
-    // if not then its clear usage of a bad array
     // if yes then we need to check its caller to see if it uses the bad array
+    // if not then its clear usage of a bad array
     fn check_returns(
         &self,
         compilation_unit: &CompilationUnit,
@@ -233,7 +294,7 @@ impl ArrayUseAfterPopFront {
         // We can not find the array from the return types of the function
         // We assume that the array is returned at the same index as it was taken on
         let return_array_indices: Vec<usize> = function
-            .params()
+            .params_all()
             .enumerate()
             .filter_map(|(i, param)| {
                 let param_type = compilation_unit
@@ -241,10 +302,11 @@ impl ArrayUseAfterPopFront {
                     .get_type(&param.ty)
                     .expect("Type not found in the registry");
 
-                if let CoreTypeConcrete::Array(_) = param_type {
-                    return Some(i);
+                match param_type {
+                    CoreTypeConcrete::Array(_) => Some(i),
+                    span if self.is_core_type_concrete_span(compilation_unit, span) => Some(i),
+                    _ => None,
                 }
-                None
             })
             .collect();
 
@@ -271,7 +333,7 @@ impl ArrayUseAfterPopFront {
                                         .map(|i| {
                                             WrapperVariable::new(
                                                 maybe_caller.name(),
-                                                invoc.branches[0].results[*i].clone(),
+                                                invoc.branches[0].results[*i].id,
                                             )
                                         })
                                         .collect();
@@ -313,10 +375,11 @@ impl ArrayUseAfterPopFront {
                     .get_type(r)
                     .expect("Type not found in the registry");
 
-                if let CoreTypeConcrete::Array(_) = return_type {
-                    return Some(i);
+                match return_type {
+                    CoreTypeConcrete::Array(_) => Some(i),
+                    span if self.is_core_type_concrete_span(compilation_unit, span) => Some(i),
+                    _ => None,
                 }
-                None
             })
             .collect();
 
@@ -325,16 +388,17 @@ impl ArrayUseAfterPopFront {
             return false;
         }
 
-        // Not sure if it is required because taint analysis adds all the arugments as
-        // tainters of the all the return values.
+        // It is not required because taint analysis adds all the arugments as
+        // tainters of the all the return values. Added it in case the taint
+        // analysis is improved later on to be more granular.
         let returned_bad_arrays: Vec<WrapperVariable> = function
             .get_statements()
             .iter()
             .flat_map(|s| {
                 if let GenStatement::Return(return_vars) = s {
-                    let sinks: HashSet<WrapperVariable> = return_vars
+                    let sinks: FxHashSet<WrapperVariable> = return_vars
                         .iter()
-                        .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                        .map(|v| WrapperVariable::new(function.name(), v.id))
                         .collect();
 
                     return taint.taints_any_sinks_variable(bad_array, &sinks);
@@ -344,5 +408,38 @@ impl ArrayUseAfterPopFront {
             .collect();
 
         !returned_bad_arrays.is_empty()
+    }
+
+    // The Span is not a Core Sierra type, it is defined in the corelib as a Struct
+    // Therefore we can not match it against CoreTypeConcrete::Span directly
+    fn is_core_type_concrete_span(
+        &self,
+        compilation_unit: &CompilationUnit,
+        maybe_span: &CoreTypeConcrete,
+    ) -> bool {
+        match maybe_span {
+            CoreTypeConcrete::Struct(struct_type) => match &struct_type.members[..] {
+                [maybe_snapshot, ..] => {
+                    let maybe_snapshot_type = compilation_unit
+                        .registry()
+                        .get_type(maybe_snapshot)
+                        .expect("Type not found in the registry");
+
+                    match maybe_snapshot_type {
+                        CoreTypeConcrete::Snapshot(maybe_array) => {
+                            let maybe_array_type = compilation_unit
+                                .registry()
+                                .get_type(&maybe_array.ty)
+                                .expect("Type not found in the registry");
+
+                            matches!(maybe_array_type, CoreTypeConcrete::Array(_))
+                        }
+                        _ => false,
+                    }
+                }
+                _ => false,
+            },
+            _ => false,
+        }
     }
 }

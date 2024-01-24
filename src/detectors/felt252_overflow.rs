@@ -5,9 +5,9 @@ use cairo_lang_sierra::extensions::felt252::Felt252BinaryOperationConcrete;
 use cairo_lang_sierra::extensions::felt252::Felt252BinaryOperator;
 use cairo_lang_sierra::extensions::{core::CoreConcreteLibfunc, felt252::Felt252Concrete};
 use cairo_lang_sierra::ids::VarId;
-use cairo_lang_sierra::program::GenInvocation;
 use cairo_lang_sierra::program::Statement as SierraStatement;
 use cairo_lang_sierra::program::StatementIdx;
+use cairo_lang_sierra::program::{GenInvocation, GenStatement};
 use std::collections::HashSet;
 
 #[derive(Default)]
@@ -157,40 +157,49 @@ impl Felt252Overflow {
             Felt252BinaryOperator::Sub => {
                 let ret_value = &invoc.branches[0].results[0];
 
-                // Look two instructions in advance
-
-                if let Some(SierraStatement::Invocation(sub_statement)) = statements.get(idx + 2) {
-                    // Check if felt252_is_zero uses return param of sub instruction
-
-                    let libfunc_sub = compilation_unit
-                        .registry()
-                        .get_libfunc(&sub_statement.libfunc_id)
-                        .expect("Library function not found in the registry");
-                    if let CoreConcreteLibfunc::Felt252(Felt252Concrete::IsZero(_)) = libfunc_sub {
-                        let user_params = &sub_statement.args;
-                        if !user_params.contains(ret_value) {
-                            self.check_felt252_tainted(
-                                results,
-                                compilation_unit,
-                                libfunc,
-                                &invoc.args,
-                                name,
-                            );
-                        }
-                    } else {
-                        self.check_felt252_tainted(
-                            results,
-                            compilation_unit,
-                            libfunc,
-                            &invoc.args,
-                            name,
-                        )
-                    }
+                // Look two and three instructions in advance for an is_zero op
+                if self.check_is_zero(statements.get(idx + 2), compilation_unit, ret_value)
+                    && self.check_is_zero(statements.get(idx + 3), compilation_unit, ret_value)
+                {
+                    self.check_felt252_tainted(
+                        results,
+                        compilation_unit,
+                        libfunc,
+                        &invoc.args,
+                        name,
+                    );
                 }
             }
             _ => {
                 self.check_felt252_tainted(results, compilation_unit, libfunc, &invoc.args, name);
             }
         }
+    }
+
+    // Return true if there is not an is_zero op or if it does not use the ret_value
+    // which means it is a real sub operation not used in an if
+    fn check_is_zero(
+        &self,
+        statement: Option<&GenStatement<StatementIdx>>,
+        compilation_unit: &CompilationUnit,
+        ret_value: &VarId,
+    ) -> bool {
+        if let Some(SierraStatement::Invocation(sub_statement)) = statement {
+            // Check if felt252_is_zero uses return param of sub instruction
+            let libfunc_sub = compilation_unit
+                .registry()
+                .get_libfunc(&sub_statement.libfunc_id)
+                .expect("Library function not found in the registry");
+            if let CoreConcreteLibfunc::Felt252(Felt252Concrete::IsZero(_)) = libfunc_sub {
+                let user_params = &sub_statement.args;
+                if !user_params.contains(ret_value) {
+                    return true;
+                }
+                return false;
+            } else {
+                return true;
+            }
+        }
+        true
     }
 }

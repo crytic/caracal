@@ -8,6 +8,6 @@ input_file: tests/detectors/reentrancy_events.cairo
         impact: Low,
         name: "reentrancy-events",
         confidence: Medium,
-        message: "Reentrancy in reentrancy_events::reentrancy_events::TestContract::bad1\n\tExternal call function_call<user@reentrancy_events::reentrancy_events::IAnotherContractDispatcherImpl::foo>([9], [10], [11], [12]) -> ([6], [7], [8]) done in reentrancy_events::reentrancy_events::TestContract::bad1\n\tEvent emitted after function_call<user@reentrancy_events::reentrancy_events::TestContract::ContractStateEventEmitter::emit::<reentrancy_events::reentrancy_events::TestContract::MyEvent, reentrancy_events::reentrancy_events::TestContract::EventMyEventIntoEvent>>([19], [20], [21], [22]) -> ([16], [17], [18]) in reentrancy_events::reentrancy_events::TestContract::bad1.",
+        message: "Reentrancy in reentrancy_events::reentrancy_events::TestContract::bad1\n\tExternal call function_call<user@reentrancy_events::reentrancy_events::IAnotherContractDispatcherImpl::foo>([0], [1], [4], [5]) -> ([6], [7], [8]) done in reentrancy_events::reentrancy_events::TestContract::bad1\n\tEvent emitted after function_call<user@reentrancy_events::reentrancy_events::TestContract::ContractStateEventEmitter::emit::<reentrancy_events::reentrancy_events::TestContract::MyEvent, reentrancy_events::reentrancy_events::TestContract::EventMyEventIntoEvent>>([6], [7], [2], [11]) -> ([12], [13], [14]) in reentrancy_events::reentrancy_events::TestContract::bad1.",
     },
 ]

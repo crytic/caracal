@@ -1,0 +1,91 @@
+---
+source: tests/integration_tests.rs
+expression: results
+input_file: tests/detectors/use_after_pop_front.cairo
+---
+[
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The array [2] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_loop[expr11]",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The array [3] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_return",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The array [6] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The array [6] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_external_call",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The array [6] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_library_call",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The array [6] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_one_branch",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The arrays [6, 21] are used after removing elements from them in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_multiple_arrays",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The span [10] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_external_call_span",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The span [10] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_library_call_span",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The span [10] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_one_branch_span",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The span [10] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_span",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The span [7] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_return_span",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The span [8] is used after removing elements from it in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_loop_span[expr14]",
+    },
+    Result {
+        impact: Low,
+        name: "use-after-pop-front",
+        confidence: Medium,
+        message: "The spans [11, 39] are used after removing elements from them in the function use_after_pop_front::use_after_pop_front::UseAfterPopFront::bad_multiple_arrays_span",
+    },
+]
