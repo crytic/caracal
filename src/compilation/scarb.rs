@@ -19,6 +19,7 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     let output = process::Command::new("scarb")
         .current_dir(opts.target.as_path())
         .arg("build")
+        .arg("--workspace")
         .output()?;
 
     if !output.status.success() {
@@ -61,7 +62,13 @@ pub fn compile(opts: CoreOpts) -> Result<Vec<ProgramCompiled>> {
     for sierra_file in sierra_files_path {
         let contents =
             fs::read_to_string(sierra_file.as_path()).expect("Failed to read a sierra file");
-        let contract_class: ContractClass = serde_json::from_str(&contents).unwrap();
+        // In some cases a .sierra is made even for newer scarb version which does not have a contract class
+        // and it is not needed for us so if we get an error we skip the file
+        let contract_class: ContractClass = if let Ok(c) = serde_json::from_str(&contents) {
+            c
+        } else {
+            continue;
+        };
         let debug_info;
 
         if contract_class.sierra_program_debug_info.is_none() {

@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::analysis::taint::WrapperVariable;
 use crate::core::compilation_unit::CompilationUnit;
@@ -8,6 +6,8 @@ use crate::core::function::{Function, Type};
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreTypeConcrete};
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement};
+use fxhash::FxHashSet;
+use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct ArrayUseAfterPopFront {}
@@ -50,10 +50,7 @@ impl Detector for ArrayUseAfterPopFront {
                                 CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::PopFront(_)) => {
                                     Some((
                                         index,
-                                        WrapperVariable::new(
-                                            function.name(),
-                                            invoc.args[0].clone(),
-                                        ),
+                                        WrapperVariable::new(function.name(), invoc.args[0].id),
                                     ))
                                 }
                                 _ => None,
@@ -78,7 +75,7 @@ impl Detector for ArrayUseAfterPopFront {
                 if !bad_array_used.is_empty() {
                     let array_ids = bad_array_used
                         .iter()
-                        .map(|f| f.1.variable().id)
+                        .map(|f| f.1.variable())
                         .collect::<Vec<u64>>();
                     let message = match array_ids.len() {
                         1 => format!(
@@ -163,8 +160,8 @@ impl ArrayUseAfterPopFront {
 
                 match libfunc {
                     CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Append(_)) => {
-                        let mut sinks = HashSet::new();
-                        sinks.insert(WrapperVariable::new(function.name(), invoc.args[0].clone()));
+                        let mut sinks = FxHashSet::default();
+                        sinks.insert(WrapperVariable::new(function.name(), invoc.args[0].id));
 
                         taint.taints_any_sinks(bad_array, &sinks)
                     }
@@ -192,10 +189,10 @@ impl ArrayUseAfterPopFront {
                     .expect("Library function not found in the registry");
 
                 if let CoreConcreteLibfunc::FunctionCall(_) = lib_func {
-                    let sinks: HashSet<WrapperVariable> = invoc
+                    let sinks: FxHashSet<WrapperVariable> = invoc
                         .args
                         .iter()
-                        .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                        .map(|v| WrapperVariable::new(function.name(), v.id))
                         .collect();
 
                     return taint.taints_any_sinks(bad_array, &sinks);
@@ -271,7 +268,7 @@ impl ArrayUseAfterPopFront {
                                         .map(|i| {
                                             WrapperVariable::new(
                                                 maybe_caller.name(),
-                                                invoc.branches[0].results[*i].clone(),
+                                                invoc.branches[0].results[*i].id,
                                             )
                                         })
                                         .collect();
@@ -325,16 +322,16 @@ impl ArrayUseAfterPopFront {
             return false;
         }
 
-        // Not sure if it is required because taint analysis adds all the arugments as
+        // Not sure if it is required because taint analysis adds all the arguments as
         // tainters of the all the return values.
         let returned_bad_arrays: Vec<WrapperVariable> = function
             .get_statements()
             .iter()
             .flat_map(|s| {
                 if let GenStatement::Return(return_vars) = s {
-                    let sinks: HashSet<WrapperVariable> = return_vars
+                    let sinks: FxHashSet<WrapperVariable> = return_vars
                         .iter()
-                        .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                        .map(|v| WrapperVariable::new(function.name(), v.id))
                         .collect();
 
                     return taint.taints_any_sinks_variable(bad_array, &sinks);

@@ -20,8 +20,8 @@ mod UnusedReturn {
 
     #[external(v0)]
     fn unused_return_2(ref self: ContractState, amount: felt252) -> felt252 {
-        let (a,b,d) = f_2(amount);
-        let c = a;
+        let (a,_b,_d) = f_2(amount);
+        let _c = a;
         a
     }
 
@@ -32,7 +32,7 @@ mod UnusedReturn {
 
     #[external(v0)]
     fn unused_return_4(ref self: ContractState, amount: felt252) {
-        f_4(amount);
+        let _a = f_4(amount);
     }
 
     #[external(v0)]
@@ -52,7 +52,7 @@ mod UnusedReturn {
 
     #[external(v0)]
     fn no_report(ref self: ContractState) {
-        let a = self.value.read();
+        let _a = self.value.read();
     }
 
     #[external(v0)]

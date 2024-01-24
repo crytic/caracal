@@ -45,7 +45,7 @@ impl Detector for ReadOnlyReentrancy {
                         .unwrap()
                         .0
                         .to_string();
-                    let functions_name = vars_read.entry(var_read).or_insert(HashSet::new());
+                    let functions_name = vars_read.entry(var_read).or_default();
                     functions_name.insert(f.name());
                 }
             }
