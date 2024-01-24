@@ -37,17 +37,17 @@ mod UnusedReturn {
 
     #[external(v0)]
     fn unused_return_5(ref self: ContractState) {
-        let a = f_5(ref self);
+        let _a = f_5(ref self);
     }
 
     #[external(v0)]
     fn unused_return_6(ref self: ContractState, s: TestStruct) {
-        let a = f_6(ref self, s.val1,s.val2);
+        let _a = f_6(ref self, s.val1,s.val2);
     }
 
     #[external(v0)]
     fn unused_return_7(ref self: ContractState, s: TestStruct) {
-        let a = f_7(ref self, s);
+        let _a = f_7(ref self, s);
     }
 
     #[external(v0)]
