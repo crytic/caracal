@@ -38,6 +38,8 @@ impl Detector for UnusedReturn {
             for f in compilation_unit.functions_user_defined() {
                 for (i, stmt) in f.get_statements().iter().enumerate() {
                     if let SierraStatement::Invocation(invoc) = stmt {
+                        // Get the return values from the function
+                        let ret_vars = &invoc.branches[0].results;
                         // Get the concrete libfunc called
                         let libfunc = compilation_unit
                             .registry()
@@ -83,7 +85,8 @@ impl Detector for UnusedReturn {
                                     .registry()
                                     .get_libfunc(&invoc.libfunc_id)
                                     .expect("Library function not found in the registry");
-
+                                // Get the parameters to the instruction for the struct_deconstruct case
+                                let args = &invoc.args;
                                 // Immediate Drop instruction
                                 if let CoreConcreteLibfunc::Drop(drop_libfunc) = libfunc {
                                     let ty_dropped = compilation_unit
@@ -117,23 +120,24 @@ impl Detector for UnusedReturn {
                                             .registry()
                                             .get_libfunc(&invoc.libfunc_id)
                                             .expect("Library function not found in the registry");
-
-                                        self.iterate_struct_deconstruct(
-                                            compilation_unit,
-                                            &mut results,
-                                            libfunc,
-                                            stmt_to_check,
-                                            stmt,
-                                            &f.name(),
-                                            return_variables,
-                                        );
+                                        // We want to make sure the struct_deconstruct corresponds to the function's return values, and not any misc. struct cleanup
+                                        if ret_vars.contains(&args[0]) {
+                                            self.iterate_struct_deconstruct(
+                                                compilation_unit,
+                                                &mut results,
+                                                libfunc,
+                                                stmt_to_check,
+                                                stmt,
+                                                &f.name(),
+                                                return_variables,
+                                            );
+                                        }
                                     }
                                 } else if let CoreConcreteLibfunc::Enum(
                                     EnumConcreteLibfunc::Match(_),
                                 ) = libfunc
                                 {
                                     let return_variables = invoc.branches[0].results.len();
-
                                     // Jump one statement which is a branch_align and the next one will be a struct_deconstruct
                                     let stmt_to_check = &following_stmts[2..];
                                     if let SierraStatement::Invocation(invoc) = &stmt_to_check[0] {

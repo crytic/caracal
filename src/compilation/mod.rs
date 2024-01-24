@@ -9,7 +9,7 @@ use crate::core::core_unit::CoreOpts;
 mod cairo_project;
 mod scarb;
 mod standard;
-mod utils;
+pub mod utils;
 
 pub struct ProgramCompiled {
     pub sierra: Program,

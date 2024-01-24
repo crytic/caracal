@@ -4,8 +4,8 @@ mod UncheckedL1HandlerFrom {
     struct Storage {}
 
     #[l1_handler]
-    fn bad(self: @ContractState, from_address: felt252) {
-        from_address + 1;
+    fn bad(self: @ContractState, from_address: felt252) -> felt252 {
+        from_address + 1
     }
 
     #[l1_handler]
@@ -24,9 +24,9 @@ mod UncheckedL1HandlerFrom {
     }
 
     #[l1_handler]
-    fn good3(self: @ContractState, from_address: felt252) {
+    fn good3(self: @ContractState, from_address: felt252) -> felt252 {
         let x = check_recursive(from_address, 0);
-        x + 2;
+        x + 2
     }
 
     // Test recursive or looped private function calls

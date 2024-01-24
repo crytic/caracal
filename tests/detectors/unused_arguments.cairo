@@ -14,6 +14,7 @@ mod UnusedArguments {
 
     #[external(v0)]
     fn unused_2(self: @ContractState, array: Array::<felt252>, l: felt252) -> felt252{
+        let _a = 1; // Need this otherwise the function is optimized away and put directly in the wrapper
         1
     }
 

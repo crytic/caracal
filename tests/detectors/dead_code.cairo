@@ -13,6 +13,8 @@ mod DeadCode {
         amount + 1
     }
 
+    // The compiler completely remove dead code at the sierra representation
+    // so we can not correclty detect dead code as of now
     fn add_2(amount: felt252) -> felt252 {
         amount + 2
     }
