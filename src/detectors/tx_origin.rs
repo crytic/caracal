@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use super::detector::{Confidence, Detector, Impact, Result};
 use crate::analysis::taint::WrapperVariable;
 use crate::core::compilation_unit::CompilationUnit;
@@ -10,17 +8,19 @@ use cairo_lang_sierra::extensions::felt252::Felt252Concrete;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement};
+use fxhash::FxHashSet;
+use std::collections::HashSet;
 
 #[derive(Default)]
 pub struct TxOrigin {}
 
 impl Detector for TxOrigin {
     fn name(&self) -> &str {
-        "dangerous-use-of-transaction-origin"
+        "tx-origin"
     }
 
     fn description(&self) -> &str {
-        "Detect usage of the transaction origin account address for the authentication or authorization"
+        "Detect usage of the transaction origin address as access control"
     }
 
     fn confidence(&self) -> Confidence {
@@ -28,7 +28,7 @@ impl Detector for TxOrigin {
     }
 
     fn impact(&self) -> Impact {
-        Impact::High
+        Impact::Medium
     }
 
     fn run(&self, core: &CoreUnit) -> HashSet<Result> {
@@ -37,7 +37,7 @@ impl Detector for TxOrigin {
 
         for compilation_unit in compilation_units.iter() {
             for function in compilation_unit.functions_user_defined() {
-                let tx_origins: HashSet<WrapperVariable> = function
+                let tx_origins: FxHashSet<WrapperVariable> = function
                     .get_statements()
                     .iter()
                     .filter_map(|stmt| match stmt {
@@ -59,11 +59,15 @@ impl Detector for TxOrigin {
                                         .collect();
                                     match &struct_params[..] {
                                         [maybe_tx_info, ..]
-                                            if maybe_tx_info == "core::starknet::info::TxInfo" =>
+                                            if [
+                                                "core::starknet::info::TxInfo",
+                                                "core::starknet::info::v2::TxInfo",
+                                            ]
+                                            .contains(&maybe_tx_info.as_str()) =>
                                         {
                                             Some(WrapperVariable::new(
                                                 function.name(),
-                                                invoc.branches[0].results[1].clone(),
+                                                invoc.branches[0].results[1].id,
                                             ))
                                         }
                                         _ => None,
@@ -86,7 +90,7 @@ impl Detector for TxOrigin {
 
                 if tx_origin_used {
                     let message = format!(
-                        "The transaction origin contract addresses is used in an authentication check in the function {}",
+                        "The transaction origin contract address is used in an access control check in the function {}",
                         &function.name()
                     );
                     results.insert(Result {
@@ -108,7 +112,7 @@ impl TxOrigin {
         &self,
         compilation_unit: &CompilationUnit,
         function: &Function,
-        tx_origin_tainted_args: &HashSet<WrapperVariable>,
+        tx_origin_tainted_args: &FxHashSet<WrapperVariable>,
         checked_private_functions: &mut HashSet<String>,
     ) -> bool {
         let tx_origin_checked = function
@@ -154,21 +158,40 @@ impl TxOrigin {
 
                         let taint = compilation_unit.get_taint(&function.name()).unwrap();
 
-                        let sinks: HashSet<WrapperVariable> = invoc
+                        let sinks: FxHashSet<WrapperVariable> = invoc
                             .args
                             .iter()
-                            .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                            .map(|v| WrapperVariable::new(function.name(), v.id))
                             .collect();
 
-                        let tx_origin_tainted_args: HashSet<WrapperVariable> =
+                        let tx_origin_tainted_args: FxHashSet<WrapperVariable> =
                             tx_origin_tainted_args
                                 .iter()
                                 .flat_map(|source| taint.taints_any_sinks_variable(source, &sinks))
                                 .map(|sink| {
-                                    WrapperVariable::new(
-                                        private_function.name(),
-                                        VarId::new(sink.variable().id - invoc.args[0].id),
-                                    )
+                                    let mut var_id = None;
+                                    for (i, var) in invoc.args.iter().enumerate() {
+                                        if var.id == sink.variable() {
+                                            var_id = Some(i);
+                                            break;
+                                        }
+                                    }
+                                    if let Some(id) = var_id {
+                                        WrapperVariable::new(
+                                            private_function.name(),
+                                            id.try_into().unwrap(),
+                                        )
+                                    } else {
+                                        println!(
+                                            "tx_origin: Did not find sink id, id could be wrong."
+                                        );
+                                        // This is very likely to use a wrong var id
+                                        // but we should never enter this branch
+                                        WrapperVariable::new(
+                                            private_function.name(),
+                                            sink.variable() - invoc.args[0].id,
+                                        )
+                                    }
                                 })
                                 .collect();
 
@@ -190,12 +213,12 @@ impl TxOrigin {
     fn is_felt252_is_zero_arg_taintaed_by_tx_origin(
         &self,
         compilation_unit: &CompilationUnit,
-        tx_origin_tainted_args: &HashSet<WrapperVariable>,
+        tx_origin_tainted_args: &FxHashSet<WrapperVariable>,
         felt252_is_zero_args: Vec<VarId>,
         function_name: &str,
     ) -> bool {
         let taint = compilation_unit.get_taint(function_name).unwrap();
-        let sink = WrapperVariable::new(function_name.to_string(), felt252_is_zero_args[0].clone());
+        let sink = WrapperVariable::new(function_name.to_string(), felt252_is_zero_args[0].id);
         taint.taints_any_sources(tx_origin_tainted_args, &sink)
     }
 }
