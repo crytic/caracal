@@ -2,14 +2,15 @@ use core::array::ArrayTrait;
 use core::serde::Serde;
 use core::array::SpanTrait;
 
-#[derive(Copy, Drop, Serde, PartialEq)]
-enum Result<T, E> {
+#[must_use]
+#[derive(Copy, Drop, Debug, Serde, PartialEq)]
+pub enum Result<T, E> {
     Ok: T,
     Err: E,
 }
 
 #[generate_trait]
-impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
+pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect<+Drop<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
@@ -21,6 +22,22 @@ impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     fn unwrap<+Drop<E>>(self: Result<T, E>) -> T {
         self.expect('Result::unwrap failed.')
     }
+    /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, returns `default`.
+    fn unwrap_or<+Drop<T>, +Drop<E>>(self: Result<T, E>, default: T) -> T {
+        match self {
+            Result::Ok(x) => x,
+            Result::Err(_) => default,
+        }
+    }
+    /// If `val` is `Result::Ok(x)`, returns `x`.
+    /// Otherwise returns `Default::<T>::default()`.
+    fn unwrap_or_default<+Drop<E>, +Default<T>>(self: Result<T, E>) -> T {
+        match self {
+            Result::Ok(x) => x,
+            Result::Err(_) => Default::default(),
+        }
+    }
+
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect_err<+Drop<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {

@@ -19,7 +19,7 @@ mod TestContract {
 
     #[external(v0)]
     fn bad2(ref self: ContractState, class_hash: ClassHash) -> u128 {
-        let a = 2_u128; // Need this otherwise the compiler inline this function in the wrapper
+        let _a = 2_u128; // Need this otherwise the compiler inline this function in the wrapper
         internal_lib_call(class_hash)
     }
 
@@ -29,7 +29,7 @@ mod TestContract {
 
     #[external(v0)]
     fn bad3(ref self: ContractState, class_hash: ClassHash) -> u128 {
-        let a = 2_u128; // Need this otherwise the compiler inline this function in the wrapper
+        let _a = 2_u128; // Need this otherwise the compiler inline this function in the wrapper
         internal_lib_call_1(class_hash)
     }
 

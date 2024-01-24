@@ -32,19 +32,25 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([6], [4]) -> ([7]) with the user-controlled parameters: [6],[4], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([10], [3]) -> ([11]) with the user-controlled parameters: [10],[3], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([7], [5]) -> ([10]) with the user-controlled parameters: [7],[5], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([12], [11]) -> ([13]) with the user-controlled parameters: [12],[11], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([8], [3]) -> ([9]) with the user-controlled parameters: [8],[3], which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([8], [4]) -> ([9]) with the user-controlled parameters: [8],[4], which is not overflow/underflow safe",
+    },
+    Result {
+        impact: Medium,
+        name: "felt252-unsafe-arithmetic",
+        confidence: Medium,
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_mul_controlled uses the felt252 operation felt252_mul([9], [5]) -> ([12]) with the user-controlled parameters: [9],[5], which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
@@ -56,7 +62,7 @@ input_file: tests/detectors/felt252_overflow.cairo
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_sub_uncontrolled uses the felt252 operation felt252_sub([3], [4]) -> ([5]), which is not overflow/underflow safe",
+        message: "The function felt252_overflow::felt252_overflow::Felt252Overflow::bad_sub_uncontrolled uses the felt252 operation felt252_sub([5], [6]) -> ([7]), which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,

@@ -11,6 +11,8 @@ fn test_format() {
     assert(format!("{}{1}", 12_usize, 14_u32) == "1214", 'positional mix bad formatting');
     assert(format!("{ba}_{}_{}_{1}", 12, 14_u32) == "hello_12_14_14", 'full mix bad formatting');
     assert(format!("{{{{}}}}") == "{{}}", 'special cases bad formatting');
+    let nz_value: NonZero<felt252> = 1.try_into().unwrap();
+    assert(format!("{}", nz_value) == "1", 'non zero bad formatting');
 }
 
 #[derive(Debug, Drop)]
@@ -60,4 +62,19 @@ fn test_format_debug() {
         ) == "StructExample { felt_value: 6, bool_value: false, byte_array_value: \"ByteArray\", enum_value: EnumExample::BoolValue(true) }",
         'bad derive struct formatting'
     );
+    assert(
+        format!("{:?}", ((), (1,), (2, 3), (4, 5, 6))) == "((), (1,), (2, 3), (4, 5, 6))",
+        'bad tuple fmt'
+    );
+    assert(format!("{:?}", core::box::BoxTrait::new(1)) == "&1", 'bad box fmt');
+    assert(
+        format!("{:?}", core::nullable::NullableTrait::new(1)) == "&1", 'bad nullable value fmt'
+    );
+    assert(format!("{:?}", core::nullable::null::<felt252>()) == "null", 'bad null fmt');
+}
+
+#[test]
+fn test_array_debug() {
+    let arr = array![1, 2, 3];
+    assert(format!("{:?}", arr) == "[1, 2, 3]", 'bad array fmt');
 }

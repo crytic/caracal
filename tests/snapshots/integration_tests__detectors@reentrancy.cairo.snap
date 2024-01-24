@@ -38,7 +38,7 @@ input_file: tests/detectors/reentrancy.cairo
         impact: Medium,
         name: "reentrancy",
         confidence: Medium,
-        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad5\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([0], [1], [4], [3]) -> ([5], [6], [7]) done in reentrancy::reentrancy::TestContract::bad5[expr8]\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::__member_module_a::InternalContractMemberStateImpl::write>([14], [15], [6], [19]) -> ([20], [21], [22]) in reentrancy::reentrancy::TestContract::bad5.",
+        message: "Reentrancy in reentrancy::reentrancy::TestContract::bad5\n\tExternal call function_call<user@reentrancy::reentrancy::IAnotherContractDispatcherImpl::foo>([0], [1], [4], [3]) -> ([5], [6], [7]) done in reentrancy::reentrancy::TestContract::bad5[expr9]\n\tVariable written after function_call<user@reentrancy::reentrancy::TestContract::__member_module_a::InternalContractMemberStateImpl::write>([14], [15], [6], [19]) -> ([20], [21], [22]) in reentrancy::reentrancy::TestContract::bad5.",
     },
     Result {
         impact: Low,

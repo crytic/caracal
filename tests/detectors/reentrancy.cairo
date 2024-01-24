@@ -44,7 +44,7 @@ mod TestContract {
 
     #[external(v0)]
     fn bad3(ref self: ContractState, address: ContractAddress) {
-        let a = self.a.read();
+        let _a = self.a.read();
         internal_ext_call(address);
         self.a.write(4);
     }
@@ -70,7 +70,7 @@ mod TestContract {
     }
 
     fn internal_ext_call2(ref self: ContractState, address: ContractAddress) {
-        let a = self.a.read();
+        let _a = self.a.read();
         IAnotherContractDispatcher { contract_address: address }.foo(4);
     }
 

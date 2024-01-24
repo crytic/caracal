@@ -1,6 +1,8 @@
 use core::array::ArrayTrait;
 use core::traits::{Into, TryInto};
 use core::option::OptionTrait;
+use core::byte_array::ByteArrayTrait;
+use core::bytes_31::BYTES_IN_BYTES31;
 use starknet::{
     SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall},
     contract_address::{ContractAddress, Felt252TryIntoContractAddress, ContractAddressIntoFelt252},
@@ -9,25 +11,25 @@ use starknet::{
 use core::serde::Serde;
 
 #[derive(Copy, Drop)]
-extern type StorageAddress;
+pub extern type StorageAddress;
 
 #[derive(Copy, Drop)]
-extern type StorageBaseAddress;
+pub extern type StorageBaseAddress;
 
 // Storage.
-extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
-extern fn storage_base_address_from_felt252(
+pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
+pub extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
-extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
-extern fn storage_address_from_base_and_offset(
+pub(crate) extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
+pub extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
 
-extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
+pub extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
-extern fn storage_address_try_from_felt252(
+pub(crate) extern fn storage_address_try_from_felt252(
     address: felt252
 ) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
 
@@ -53,8 +55,15 @@ impl StorageAddressSerde of Serde<StorageAddress> {
     }
 }
 
+impl DebugStorageAddress = core::fmt::into_felt252_based::DebugImpl<StorageAddress>;
+impl DebugStorageBaseAddress of core::fmt::Debug<StorageBaseAddress> {
+    fn fmt(self: @StorageBaseAddress, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        DebugStorageAddress::fmt(@storage_address_from_base(*self), ref f)
+    }
+}
+
 /// Trait for types that can be used as a value in Starknet storage variables.
-trait Store<T> {
+pub trait Store<T> {
     /// Reads a value from storage from domain `address_domain` and base address `base`.
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
     /// Writes a value to storage to domain `address_domain` and base address `base`.
@@ -74,7 +83,7 @@ trait Store<T> {
 
 /// Trait for easier implementation of `Store` used for packing and unpacking values into values
 /// that already implement `Store`, and having `Store` implemented using this conversion.
-trait StorePacking<T, PackedT> {
+pub trait StorePacking<T, PackedT> {
     /// Packs a value of type `T` into a value of type `PackedT`.
     fn pack(value: T) -> PackedT;
     /// Unpacks a value of type `PackedT` into a value of type `T`.
@@ -256,6 +265,16 @@ impl StorePackingBytes31 of StorePacking<bytes31, felt252> {
     #[inline]
     fn unpack(value: felt252) -> bytes31 {
         value.try_into().expect('StoreBytes31 - non bytes31')
+    }
+}
+
+impl StorePackingNonZero<T, +TryInto<T, NonZero<T>>> of StorePacking<NonZero<T>, T> {
+    fn pack(value: NonZero<T>) -> T {
+        value.into()
+    }
+    #[inline]
+    fn unpack(value: T) -> NonZero<T> {
+        value.try_into().expect('StoreNonZero - zero value')
     }
 }
 
@@ -513,7 +532,6 @@ impl TupleSize4Store<
     }
 }
 
-
 impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result<T, E>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
@@ -634,7 +652,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
-            Option::None(x) => { Store::write(address_domain, base, 0)?; }
+            Option::None(_x) => { Store::write(address_domain, base, 0)?; }
         };
         starknet::SyscallResult::Ok(())
     }
@@ -642,4 +660,154 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
     fn size() -> u8 {
         1 + Store::<T>::size()
     }
+}
+
+/// Store for a `ByteArray`.
+///
+/// The layout of a `ByteArray` in storage is as follows:
+/// * Only the length in bytes is stored in the original address where the byte array is logically
+///   stored.
+/// * The actual data is stored in chunks of 256 `bytes31`s in another place in storage
+///   determined by the hash of:
+///   - The address storing the length of the array.
+///   - The chunk index.
+///   - The short string `ByteArray`.
+impl ByteArrayStore of Store<ByteArray> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<ByteArray> {
+        inner_read_byte_array(address_domain, storage_address_from_base(base))
+    }
+    #[inline(always)]
+    fn write(address_domain: u32, base: StorageBaseAddress, value: ByteArray) -> SyscallResult<()> {
+        inner_write_byte_array(address_domain, storage_address_from_base(base), value)
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<ByteArray> {
+        inner_read_byte_array(address_domain, storage_address_from_base_and_offset(base, offset))
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: ByteArray
+    ) -> SyscallResult<()> {
+        inner_write_byte_array(
+            address_domain, storage_address_from_base_and_offset(base, offset), value
+        )
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1
+    }
+}
+
+/// Returns a pointer to the `chunk`'th chunk of the byte array at `address`.
+/// The pointer is the `Poseidon` hash of:
+/// * `address` - The address of the ByteArray (where the length is stored).
+/// * `chunk` - The index of the chunk.
+/// * The short string `ByteArray` is used as the capacity argument of the sponge construction
+///   (domain separation).
+fn inner_byte_array_pointer(address: StorageAddress, chunk: felt252) -> StorageBaseAddress {
+    let (r, _, _) = core::poseidon::hades_permutation(address.into(), chunk, 'ByteArray'_felt252);
+    storage_base_address_from_felt252(r)
+}
+
+/// Reads a byte array from storage from domain `address_domain` and address `address`.
+/// The length of the byte array is read from `address` at domain `address_domain`.
+/// For more info read the documentation of `ByteArrayStore`.
+fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> SyscallResult<ByteArray> {
+    let len: usize =
+        match starknet::syscalls::storage_read_syscall(address_domain, address)?.try_into() {
+        Option::Some(x) => x,
+        Option::None => { return SyscallResult::Err(array!['Invalid ByteArray length']); },
+    };
+    let (mut remaining_full_words, pending_word_len) = core::DivRem::div_rem(
+        len, BYTES_IN_BYTES31.try_into().unwrap()
+    );
+    let mut chunk = 0;
+    let mut chunk_base = inner_byte_array_pointer(address, chunk);
+    let mut index_in_chunk = 0_u8;
+    let mut result: ByteArray = Default::default();
+    loop {
+        if remaining_full_words == 0 {
+            break Result::Ok(());
+        }
+        let value =
+            match starknet::syscalls::storage_read_syscall(
+                address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk)
+            ) {
+            Result::Ok(value) => value,
+            Result::Err(err) => { break Result::Err(err); },
+        };
+        let value: bytes31 = match value.try_into() {
+            Option::Some(x) => x,
+            Option::None => { break Result::Err(array!['Invalid value']); },
+        };
+        result.data.append(value);
+        remaining_full_words -= 1;
+        index_in_chunk = match core::integer::u8_overflowing_add(index_in_chunk, 1) {
+            Result::Ok(x) => x,
+            Result::Err(_) => {
+                // After reading 256 `bytes31`s `index_in_chunk` will overflow and we move to the
+                // next chunk.
+                chunk += 1;
+                chunk_base = inner_byte_array_pointer(address, chunk);
+                0
+            },
+        };
+    }?;
+    if pending_word_len != 0 {
+        let pending_word = starknet::syscalls::storage_read_syscall(
+            address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk)
+        )?;
+        result.pending_word = pending_word;
+        result.pending_word_len = pending_word_len;
+    }
+    Result::Ok(result)
+}
+
+/// Writes a byte array to storage to domain `address_domain` and address `address`.
+/// The length of the byte array is written to `address` at domain `address_domain`.
+/// For more info read the documentation of `ByteArrayStore`.
+fn inner_write_byte_array(
+    address_domain: u32, address: StorageAddress, value: ByteArray
+) -> SyscallResult<()> {
+    let len = value.len();
+    starknet::syscalls::storage_write_syscall(address_domain, address, len.into())?;
+    let mut full_words = value.data.span();
+    let mut chunk = 0;
+    let mut chunk_base = inner_byte_array_pointer(address, chunk);
+    let mut index_in_chunk = 0_u8;
+    loop {
+        let curr_value = match full_words.pop_front() {
+            Option::Some(x) => x,
+            Option::None => { break Result::Ok(()); },
+        };
+        match starknet::syscalls::storage_write_syscall(
+            address_domain,
+            storage_address_from_base_and_offset(chunk_base, index_in_chunk),
+            (*curr_value).into()
+        ) {
+            Result::Ok(_) => {},
+            Result::Err(err) => { break Result::Err(err); },
+        };
+        index_in_chunk = match core::integer::u8_overflowing_add(index_in_chunk, 1) {
+            Result::Ok(x) => x,
+            Result::Err(_) => {
+                // After writing 256 `byte31`s `index_in_chunk` will overflow and we move to the
+                // next chunk.
+                chunk += 1;
+                chunk_base = inner_byte_array_pointer(address, chunk);
+                0
+            },
+        };
+    }?;
+    if value.pending_word_len != 0 {
+        starknet::syscalls::storage_write_syscall(
+            address_domain,
+            storage_address_from_base_and_offset(chunk_base, index_in_chunk),
+            value.pending_word
+        )?;
+    }
+    Result::Ok(())
 }

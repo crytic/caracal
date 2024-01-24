@@ -20,7 +20,7 @@ input_file: tests/detectors/unchecked_l1_handler_from.cairo
         impact: Medium,
         name: "felt252-unsafe-arithmetic",
         confidence: Medium,
-        message: "The function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::check_recursive uses the felt252 operation felt252_add([3], [44]) -> ([45]), which is not overflow/underflow safe",
+        message: "The function unchecked_l1_handler_from::unchecked_l1_handler_from::UncheckedL1HandlerFrom::check_recursive uses the felt252 operation felt252_add([3], [36]) -> ([37]), which is not overflow/underflow safe",
     },
     Result {
         impact: Medium,
