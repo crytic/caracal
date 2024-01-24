@@ -39,7 +39,7 @@ mod UseAfterPopFront {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
 
-        let b = arr.pop_front();
+        let _b = arr.pop_front();
         self.emit(ArrayEvent{ arr });
     }
 
@@ -49,7 +49,7 @@ mod UseAfterPopFront {
         arr.append(1);
 
         match arr.pop_front() {
-            Option::Some(val) => {
+            Option::Some(_val) => {
                 self.emit(ArrayEvent{ arr });
                 ()
             },
@@ -64,7 +64,7 @@ mod UseAfterPopFront {
 
         loop {
             match arr.pop_front() {
-                Option::Some(val) => (),
+                Option::Some(_val) => (),
                 Option::None(_) => {
                     break ();
                 }
@@ -79,7 +79,7 @@ mod UseAfterPopFront {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
 
-        let b = arr.pop_front();
+        let _b = arr.pop_front();
         return arr;
     }
 
@@ -88,7 +88,7 @@ mod UseAfterPopFront {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
 
-        let b = arr.pop_front();
+        let _b = arr.pop_front();
         return IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(arr);
     }
 
@@ -97,7 +97,7 @@ mod UseAfterPopFront {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
 
-        let b = arr.pop_front();
+        let _b = arr.pop_front();
         return IAnotherContractDispatcher { contract_address: starknet::contract_address_const::<0>() }.foo(arr);
     }
 
@@ -106,13 +106,13 @@ mod UseAfterPopFront {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
 
-        let b = arr.pop_front();
+        let _b = arr.pop_front();
         self.emit(ArrayEvent{ arr });
 
         let mut arr1 = ArrayTrait::<u128>::new();
         arr1.append(1);
 
-        let b1 = arr1.pop_front();
+        let _b1 = arr1.pop_front();
         self.emit(ArrayEvent{ arr: arr1 });
     }
 
@@ -121,7 +121,7 @@ mod UseAfterPopFront {
         let mut arr = ArrayTrait::<u128>::new();
         arr.append(1);
 
-        arr.pop_front();
+        let _a = arr.pop_front();
     }
 
     #[external(v0)]
@@ -131,7 +131,7 @@ mod UseAfterPopFront {
 
         loop {
             match arr.pop_front() {
-                Option::Some(val) => (),
+                Option::Some(_val) => (),
                 Option::None(_) => {
                     break ();
                 }
@@ -146,7 +146,7 @@ mod UseAfterPopFront {
         arr.append(1);
 
         let mut span = arr.span();
-        let b = span.pop_front();
+        let _b = span.pop_front();
         self.emit(SpanEvent{ span });
     }
 
@@ -157,7 +157,7 @@ mod UseAfterPopFront {
 
         let mut span = arr.span();
         match span.pop_front() {
-            Option::Some(val) => {
+            Option::Some(_val) => {
                 self.emit(SpanEvent{ span });
                 ()
             },
@@ -173,7 +173,7 @@ mod UseAfterPopFront {
         let mut span = arr.span();
         loop {
             match span.pop_front() {
-                Option::Some(val) => (),
+                Option::Some(_val) => (),
                 Option::None(_) => {
                     break ();
                 }
@@ -189,7 +189,7 @@ mod UseAfterPopFront {
         arr.append(1);
 
         let mut span = arr.span();
-        let b = span.pop_front();
+        let _b = span.pop_front();
         return span;
     }
 
@@ -199,7 +199,7 @@ mod UseAfterPopFront {
         arr.append(1);
 
         let mut span = arr.span();
-        let b = span.pop_front();
+        let _b = span.pop_front();
         return IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.bar(span);
     }
 
@@ -209,7 +209,7 @@ mod UseAfterPopFront {
         arr.append(1);
 
         let mut span = arr.span();
-        let b = span.pop_front();
+        let _b = span.pop_front();
         return IAnotherContractDispatcher { contract_address: starknet::contract_address_const::<0>() }.bar(span);
     }
 
@@ -219,14 +219,14 @@ mod UseAfterPopFront {
         arr.append(1);
 
         let mut span = arr.span();
-        let b = span.pop_front();
+        let _b = span.pop_front();
         self.emit(SpanEvent{ span });
 
         let mut arr1 = ArrayTrait::<u128>::new();
         arr1.append(1);
 
         let mut span1 = arr.span();
-        let b1 = span1.pop_front();
+        let _b1 = span1.pop_front();
         self.emit(SpanEvent{ span: span1 });
     }
 
@@ -236,7 +236,7 @@ mod UseAfterPopFront {
         arr.append(1);
 
         let mut span = arr.span();
-        span.pop_front();
+        let _a = span.pop_front();
     }
 
     #[external(v0)]
@@ -247,7 +247,7 @@ mod UseAfterPopFront {
         let mut span = arr.span();
         loop {
             match span.pop_front() {
-                Option::Some(val) => (),
+                Option::Some(_val) => (),
                 Option::None(_) => {
                     break ();
                 }

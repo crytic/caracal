@@ -8,6 +8,7 @@ use crate::core::function::{Function, Type};
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreTypeConcrete};
 use cairo_lang_sierra::program::{GenStatement, Statement as SierraStatement};
+use fxhash::FxHashSet;
 
 #[derive(Default)]
 pub struct UseAfterPopFront {}
@@ -64,10 +65,7 @@ impl Detector for UseAfterPopFront {
                                 CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::PopFront(_)) => {
                                     Some((
                                         index,
-                                        WrapperVariable::new(
-                                            function.name(),
-                                            invoc.args[0].clone(),
-                                        ),
+                                        WrapperVariable::new(function.name(), invoc.args[0].id),
                                         CollectionType::Array,
                                     ))
                                 }
@@ -75,14 +73,14 @@ impl Detector for UseAfterPopFront {
                                     ArrayConcreteLibfunc::SnapshotPopFront(_),
                                 ) => Some((
                                     index,
-                                    WrapperVariable::new(function.name(), invoc.args[0].clone()),
+                                    WrapperVariable::new(function.name(), invoc.args[0].id),
                                     CollectionType::Span,
                                 )),
                                 CoreConcreteLibfunc::Array(
                                     ArrayConcreteLibfunc::SnapshotPopBack(_),
                                 ) => Some((
                                     index,
-                                    WrapperVariable::new(function.name(), invoc.args[0].clone()),
+                                    WrapperVariable::new(function.name(), invoc.args[0].id),
                                     CollectionType::Span,
                                 )),
                                 _ => None,
@@ -116,7 +114,7 @@ impl Detector for UseAfterPopFront {
                 if !bad_array_used.is_empty() {
                     let array_ids = bad_array_used
                         .iter()
-                        .map(|f| f.0.variable().id)
+                        .map(|f| f.0.variable())
                         .collect::<Vec<u64>>();
                     let message = match array_ids.len() {
                         1 => format!(
@@ -141,7 +139,7 @@ impl Detector for UseAfterPopFront {
                 if !bad_span_used.is_empty() {
                     let span_ids = bad_span_used
                         .iter()
-                        .map(|f| f.0.variable().id)
+                        .map(|f| f.0.variable())
                         .collect::<Vec<u64>>();
                     let message = match span_ids.len() {
                         1 => format!(
@@ -226,8 +224,8 @@ impl UseAfterPopFront {
 
                 match libfunc {
                     CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Append(_)) => {
-                        let mut sinks = HashSet::new();
-                        sinks.insert(WrapperVariable::new(function.name(), invoc.args[0].clone()));
+                        let mut sinks = FxHashSet::default();
+                        sinks.insert(WrapperVariable::new(function.name(), invoc.args[0].id));
 
                         taint.taints_any_sinks(bad_array, &sinks)
                     }
@@ -255,10 +253,10 @@ impl UseAfterPopFront {
                     .expect("Library function not found in the registry");
 
                 if let CoreConcreteLibfunc::FunctionCall(_) = lib_func {
-                    let sinks: HashSet<WrapperVariable> = invoc
+                    let sinks: FxHashSet<WrapperVariable> = invoc
                         .args
                         .iter()
-                        .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                        .map(|v| WrapperVariable::new(function.name(), v.id))
                         .collect();
 
                     return taint.taints_any_sinks(bad_array, &sinks);
@@ -335,7 +333,7 @@ impl UseAfterPopFront {
                                         .map(|i| {
                                             WrapperVariable::new(
                                                 maybe_caller.name(),
-                                                invoc.branches[0].results[*i].clone(),
+                                                invoc.branches[0].results[*i].id,
                                             )
                                         })
                                         .collect();
@@ -398,9 +396,9 @@ impl UseAfterPopFront {
             .iter()
             .flat_map(|s| {
                 if let GenStatement::Return(return_vars) = s {
-                    let sinks: HashSet<WrapperVariable> = return_vars
+                    let sinks: FxHashSet<WrapperVariable> = return_vars
                         .iter()
-                        .map(|v| WrapperVariable::new(function.name(), v.clone()))
+                        .map(|v| WrapperVariable::new(function.name(), v.id))
                         .collect();
 
                     return taint.taints_any_sinks_variable(bad_array, &sinks);
