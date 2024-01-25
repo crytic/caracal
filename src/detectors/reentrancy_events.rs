@@ -39,6 +39,20 @@ impl Detector for ReentrancyEvents {
                     {
                         for event in reentrancy_info.events.iter() {
                             for call in reentrancy_info.external_calls.iter() {
+                                let external_function_call = format!(
+                                    "{}",
+                                    call.get_external_call().as_ref().unwrap().get_statement()
+                                );
+
+                                if let Some(safe_external_calls) = core.get_safe_external_calls() {
+                                    if safe_external_calls
+                                        .iter()
+                                        .any(|f_name| external_function_call.contains(f_name))
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 results.insert(Result {
                                     name: self.name().to_string(),
                                     impact: self.impact(),
@@ -46,10 +60,7 @@ impl Detector for ReentrancyEvents {
                                     message: format!(
                                         "Reentrancy in {}\n\tExternal call {} done in {}\n\tEvent emitted after {} in {}.",
                                         f.name(),
-                                        call.get_external_call()
-                                            .as_ref()
-                                            .unwrap()
-                                            .get_statement(),
+                                        external_function_call,
                                         call.get_function(),
                                         event.get_event_emitted().as_ref().unwrap().get_statement(),
                                         event.get_function()

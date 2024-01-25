@@ -38,6 +38,20 @@ impl Detector for Reentrancy {
                     } = bb_info.1
                     {
                         for call in reentrancy_info.external_calls.iter() {
+                            let external_function_call = format!(
+                                "{}",
+                                call.get_external_call().as_ref().unwrap().get_statement()
+                            );
+
+                            if let Some(safe_external_calls) = core.get_safe_external_calls() {
+                                if safe_external_calls
+                                    .iter()
+                                    .any(|f_name| external_function_call.contains(f_name))
+                                {
+                                    continue;
+                                }
+                            }
+
                             if let Some(current_vars_read_before_call) = reentrancy_info
                                 .variables_read_before_calls
                                 .iter()
@@ -79,10 +93,7 @@ impl Detector for Reentrancy {
                                             message: format!(
                                                 "Reentrancy in {}\n\tExternal call {} done in {}\n\tVariable written after {} in {}.",
                                                 f.name(),
-                                                call.get_external_call()
-                                                    .as_ref()
-                                                    .unwrap()
-                                                    .get_statement(),
+                                                external_function_call,
                                                 call.get_function(),
                                                 written_variable
                                                     .get_storage_variable_written()

@@ -22,6 +22,10 @@ pub struct DetectArgs {
     #[arg(long, num_args(0..))]
     contract_path: Option<Vec<String>>,
 
+    /// Functions name that are safe when called (e.g. they don't cause a reentrancy)
+    #[arg(long, num_args(0..))]
+    safe_external_calls: Option<Vec<String>>,
+
     /// Detectors to run
     #[arg(long, num_args(0..), conflicts_with_all(["exclude", "exclude_informational", "exclude_low", "exclude_medium", "exclude_high"]))]
     detect: Option<Vec<String>>,
@@ -53,6 +57,7 @@ impl From<&DetectArgs> for CoreOpts {
             target: args.target.clone(),
             corelib: args.corelib.clone(),
             contract_path: args.contract_path.clone(),
+            safe_external_calls: args.safe_external_calls.clone(),
         }
     }
 }

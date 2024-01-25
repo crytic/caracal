@@ -12,6 +12,7 @@ fn test_detectors() {
                 env::var("CARGO_MANIFEST_DIR").unwrap() + "/corelib/src",
             )),
             contract_path: None,
+            safe_external_calls: Some(vec!["::safe_foo".to_string()]),
         };
         let core = CoreUnit::new(opts).unwrap();
         let mut results = get_detectors()
