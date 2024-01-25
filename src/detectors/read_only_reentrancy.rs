@@ -58,6 +58,20 @@ impl Detector for ReadOnlyReentrancy {
                     } = bb_info.1
                     {
                         for call in reentrancy_info.external_calls.iter() {
+                            let external_function_call = format!(
+                                "{}",
+                                call.get_external_call().as_ref().unwrap().get_statement()
+                            );
+
+                            if let Some(safe_external_calls) = core.get_safe_external_calls() {
+                                if safe_external_calls
+                                    .iter()
+                                    .any(|f_name| external_function_call.contains(f_name))
+                                {
+                                    continue;
+                                }
+                            }
+
                             for written_variable in reentrancy_info.storage_variables_written.iter()
                             {
                                 let written_variable_name = written_variable
@@ -82,10 +96,7 @@ impl Detector for ReadOnlyReentrancy {
                                             message: format!(
                                                 "Read only reentrancy in {}\n\tExternal call {} done in {}\n\tVariable written after {} in {}",
                                                 view_function,
-                                                call.get_external_call()
-                                                    .as_ref()
-                                                    .unwrap()
-                                                    .get_statement(),
+                                                external_function_call,
                                                 call.get_function(),
                                                 written_variable
                                                     .get_storage_variable_written()

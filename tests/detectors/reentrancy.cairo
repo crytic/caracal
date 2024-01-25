@@ -1,6 +1,7 @@
 #[starknet::interface]
 trait IAnotherContract<T> {
     fn foo(self: @T, a: felt252);
+    fn safe_foo(self: @T, a: felt252);
 }
 
 #[starknet::contract]
@@ -20,6 +21,13 @@ mod TestContract {
         let a = self.a.read();
         self.a.write(4);
         IAnotherContractDispatcher { contract_address: address }.foo(a);
+    }
+
+    #[external(v0)]
+    fn good2(ref self: ContractState, address: ContractAddress) {
+        let a = self.a.read();
+        IAnotherContractDispatcher { contract_address: address }.safe_foo(a);
+        self.a.write(4);
     }
 
     #[external(v0)]
